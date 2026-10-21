@@ -66,7 +66,37 @@ dependencies:
 
 ---
 
-## 🎨 3. Sistema de Diseño y UI/UX Móvil
+## 🛠️ 3. Uso Obligatorio de Onion CLI (`onion`)
+
+> 🚨 **REGLA FUNDAMENTAL DE GENERACIÓN DE CÓDIGO:**
+> **No crees archivos manualmente si existe un comando `onion` que los genere.**
+> El entorno cuenta con el CLI `onion` preinstalado. Siempre debes generar las estructuras base (módulos, vistas, cubits y barrels) utilizando el CLI y luego adaptar el código a los requerimientos móviles específicos.
+
+### Comandos Clave de `onion`:
+- **Generar Módulo Flutter Completo (Cubit, Dialogs, View, Widgets):**
+  ```powershell
+  onion flutter-module <entity> --output-dir lib/src/modules/ --reactive
+  ```
+  *Ejemplo para el módulo de usuarios:*
+  ```powershell
+  onion flutter-module user --output-dir lib/src/modules/ --reactive
+  ```
+- **Generar Vistas Específicas:**
+  ```powershell
+  onion dart-view <entity> --output-dir lib/src/modules/<entity>/view/
+  ```
+- **Generar Cubits:**
+  ```powershell
+  onion dart-cubit <entity> --output-dir lib/src/cubits/<entity>/
+  ```
+- **Generar Archivos Barrel (`export.dart`):**
+  ```powershell
+  onion barrel <directory_path>
+  ```
+
+---
+
+## 🎨 4. Sistema de Diseño y UI/UX Móvil
 
 ### Tokens de Color (Basados en `AppColor.md`):
 - **Primary:** `#006876` (Teal Clínico Oscuro) / OnPrimary: `#FFFFFF`
@@ -87,7 +117,7 @@ Utiliza `StatefulShellRoute.indexedStack` de `go_router` con una `NavigationBar`
 
 ---
 
-## 🔒 4. Reglas de Negocio Críticas a Cumplir
+## 🔒 5. Reglas de Negocio Críticas a Cumplir
 
 1. **Montos Monetarios en Centavos (`int`):**
    - Nunca usar `double` para transacciones monetarias ni balances de arqueo.
@@ -112,7 +142,7 @@ Utiliza `StatefulShellRoute.indexedStack` de `go_router` con una `NavigationBar`
 
 ---
 
-## 📂 5. Estructura de Directorios del Proyecto
+## 📂 6. Estructura de Directorios del Proyecto
 
 Organiza el proyecto dentro de `serum_mobile/lib/` bajo la siguiente convención:
 
@@ -145,7 +175,7 @@ serum_mobile/lib/
 
 ---
 
-## 📋 6. Plan de Ejecución Paso a Paso para el Agente
+## 📋 7. Plan de Ejecución Paso a Paso para el Agente
 
 Sigue rigurosamente estos hitos de desarrollo:
 
