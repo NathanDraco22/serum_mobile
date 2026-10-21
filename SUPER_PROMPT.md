@@ -142,9 +142,9 @@ Utiliza `StatefulShellRoute.indexedStack` de `go_router` con una `NavigationBar`
 
 ---
 
-## 📂 6. Estructura de Directorios del Proyecto
+## 📂 6. Estructura de Directorios del Proyecto (Congruente con `serum_app_front`)
 
-Organiza el proyecto dentro de `serum_mobile/lib/` bajo la siguiente convención:
+Organiza el proyecto dentro de `serum_mobile/lib/` siguiendo estrictamente la misma arquitectura y convenciones de nombres de `serum_app_front`:
 
 ```
 serum_mobile/lib/
@@ -152,25 +152,57 @@ serum_mobile/lib/
 │   ├── app_router.dart              # GoRouter con StatefulShellRoute y guards de autenticación
 │   ├── app_theme.dart               # Tema Claro y Oscuro (Material 3, ColorPalette)
 │   ├── service_locator.dart         # GetIt para inyección de dependencias
-│   └── app_config.dart              # Constantes de URL API y configuración
-├── src/
-│   ├── cubits/                      # Cubits globales de aplicación
-│   │   ├── auth/                    # AuthCubit & AuthState (login, logout, checkUser)
-│   │   └── pending_approvals/       # Cubit para conteo reactivo de órdenes bloqueadas
-│   ├── modules/                     # Módulos de pantalla (UI)
-│   │   ├── auth/                    # Pantalla de login elegante para móvil
-│   │   ├── shell/                   # NavigationShell con BottomNavigationBar adaptativo
-│   │   ├── dashboard/               # Métricas, KPIs y accesos directos
-│   │   ├── approvals/               # Bandeja de aprobación de órdenes bloqueadas
-│   │   ├── orders/                  # Consulta de órdenes y visor modal de resultados
-│   │   ├── cash_shifts/             # Monitor de arqueos, turnos y cortes de caja
-│   │   ├── reports/                 # Gráficos financieros y auditoría de turnos
-│   │   └── admin/                   # Gestión de usuarios, diálogo de creación y settings
-│   └── shared/                      # Widgets reutilizables móviles
-│       ├── cards/                   # KpiCard, OrderCard, ShiftCard
-│       ├── badges/                  # StatusBadge, MedicalFlagBadge
-│       └── dialogs/                 # ConfirmActionDialog, ReasonPromptDialog
-└── main.dart                        # Punto de entrada con Hive, ServiceLocator y ProviderContainer
+│   ├── app_serum_config.dart        # Configuración de SerumClientConfig
+│   └── app_assets.dart              # Constantes de rutas a imágenes y logotipos
+├── material_app_builder.dart        # Builder desacoplado con MediaQuery y textScaler clamp
+├── provider_container.dart          # MultiRepositoryProvider (SerumClient) y GlobalCubits
+├── main.dart                        # Punto de entrada conciso (MyApp y AppRoot)
+└── src/
+    ├── core/                        # Utilidades centrales y configuraciones de app
+    │   └── app_config_manager.dart
+    ├── cubits/                      # Cubits organizados por entidad/alcance
+    │   ├── app_session_cubit/       # Sesión activa de usuario y sucursal
+    │   ├── order_cubit/             # Cubit de consulta y aprobación de órdenes
+    │   ├── user_cubit/              # Cubit de gestión y creación de usuarios
+    │   ├── cash_shift_cubit/        # Cubit de arqueos y turnos de caja
+    │   └── report_cubit/            # Cubit de reportes financieros y auditorías
+    ├── modules/                     # Módulos de pantalla con subcarpetas view/ y widgets/
+    │   ├── auth/                    # Login móvil
+    │   │   ├── view/login_screen.dart
+    │   │   └── widgets/
+    │   ├── shell/                   # NavigationShell con BottomNavigationBar adaptativo
+    │   │   ├── view/shell_screen.dart
+    │   │   └── widgets/
+    │   ├── dashboard/               # Métricas, KPIs y accesos directos
+    │   │   ├── view/dashboard_screen.dart
+    │   │   └── widgets/
+    │   ├── approvals/               # Bandeja de aprobación de órdenes bloqueadas
+    │   │   ├── view/approvals_screen.dart
+    │   │   └── widgets/approval_order_card.dart
+    │   ├── order/                   # Consulta de órdenes y visor de resultados
+    │   │   ├── view/order_screen.dart
+    │   │   └── widgets/order_results_dialog.dart
+    │   ├── cash_shift/              # Monitor de arqueos, turnos y cortes de caja
+    │   │   ├── view/cash_shift_screen.dart
+    │   │   └── widgets/shift_breakdown_card.dart
+    │   ├── report/                  # Gráficos financieros y auditoría de turnos
+    │   │   ├── view/report_screen.dart
+    │   │   └── widgets/
+    │   └── user/                    # Gestión y creación de usuarios
+    │       ├── view/user_screen.dart
+    │       └── widgets/user_form_dialog.dart
+    ├── tools/                       # Herramientas transversales y formateadores
+    │   ├── formatters/              # Formateadores de centavos a moneda, fechas, etc.
+    │   ├── calculators/             # Cálculos matemáticos y estadísticos
+    │   └── cache/                   # Utilidades de caché local
+    └── widgets/                     # Widgets globales reutilizables (NO 'shared')
+        ├── common/                  # Botones, loaders, estados vacíos, cards
+        │   ├── kpi_card.dart
+        │   ├── status_badge.dart
+        │   └── medical_flag_badge.dart
+        └── dialogs/                 # Modales de confirmación y visores
+            ├── confirm_action_dialog.dart
+            └── reason_prompt_dialog.dart
 ```
 
 ---
@@ -182,8 +214,11 @@ Sigue rigurosamente estos hitos de desarrollo:
 ### Hito 1: Setup Base e Infraestructura
 1. Configurar `pubspec.yaml` con `serum_business: path: ../serum_business`, `flutter_bloc`, `go_router`, `hive_ce`, `intl`, `fl_chart`.
 2. Crear `lib/config/app_theme.dart` implementando la paleta de colores de `AppColor.md`.
-3. Configurar inicialización de `Hive` en `main.dart` y service locator con `SerumClient`.
-4. Implementar `AuthCubit` y pantalla `LoginView`.
+3. Implementar el patrón limpio y desacoplado de `serum_app_front`:
+   - `lib/material_app_builder.dart`: Builder con MediaQuery y control de tipografía (`textScaler.clamp`).
+   - `lib/provider_container.dart`: `ProviderContainer` con `MultiRepositoryProvider` inyectando todos los repositorios de `SerumClient` y `GlobalCubitProvider`.
+   - `lib/config/service_locator.dart`: Registro de servicios e instancias con `get_it`.
+4. Implementar `AppSessionCubit` y pantalla `LoginScreen`.
 
 ### Hito 2: Shell de Navegación y Dashboard
 1. Implementar `AppRouter` con `StatefulShellRoute` y barra de navegación inferior (5 pestañas).
