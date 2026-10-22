@@ -58,5 +58,5 @@ El formulario se despliega como un `showModalBottomSheet` amplio o `Dialog` con 
 
 ## 🛡️ 4. Reglas de Negocio y Seguridad
 
-- **Restricción de Creación:** Solo los usuarios con `accessLevel >= 4` (Directores / Administradores Generales) pueden crear nuevos colaboradores.
+- **Restricción Exclusiva para Administradores:** En **Serum Mobile**, el acceso a la pantalla de usuarios (`/users`) y el alta de colaboradores está reservado **exclusivamente para usuarios Administradores** (`isAdmin == true`: Root, `accessLevel >= 5`, o rol `'Admin'`/`'Administrador'`). Los supervisores operativos no tienen visible esta pestaña en el `NavigationBar` ni acceso a su ruta.
 - **Inmutabilidad y Reactividad:** Tras enviar el formulario exitosamente (`UsersRepository.createUser`), el diálogo se cierra, se emite una notificación snackbar de éxito y el listado se actualiza de inmediato mediante el `ReactiveRepository`.

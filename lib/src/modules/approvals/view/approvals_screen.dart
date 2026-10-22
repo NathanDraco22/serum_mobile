@@ -5,6 +5,7 @@ import 'package:serum_mobile/config/app_theme.dart';
 import 'package:serum_mobile/src/cubits/app_session_cubit/app_session_cubit.dart';
 import 'package:serum_mobile/src/cubits/approvals_cubit/approvals_cubit.dart';
 import 'package:serum_mobile/src/modules/approvals/widgets/approval_order_card.dart';
+import 'package:serum_mobile/src/widgets/common/empty_state_view.dart';
 
 class ApprovalsScreen extends StatelessWidget {
   const ApprovalsScreen({super.key});
@@ -27,13 +28,27 @@ class _ApprovalsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cubit = context.read<ApprovalsCubit>();
 
-    return Scaffold(
-      backgroundColor: ColorPalette.surface,
-      appBar: AppBar(
-        title: const Text('Bandeja de Aprobaciones'),
-      ),
-      body: BlocConsumer<ApprovalsCubit, ApprovalsState>(
+    return BlocListener<AppSessionCubit, AppSessionState>(
+      listenWhen: (prev, curr) =>
+          prev.currentBranch?.id != curr.currentBranch?.id,
+      listener: (context, sessionState) {
+        cubit.loadBlockedOrders();
+      },
+      child: Scaffold(
+        backgroundColor: ColorPalette.surface,
+        appBar: AppBar(
+          title: const Text('Bandeja de Aprobaciones'),
+          actions: [
+            IconButton(
+              tooltip: 'Actualizar',
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: () => cubit.loadBlockedOrders(),
+            ),
+          ],
+        ),
+        body: BlocConsumer<ApprovalsCubit, ApprovalsState>(
         listener: (context, state) {
           if (state.successMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -79,44 +94,14 @@ class _ApprovalsView extends StatelessWidget {
               onRefresh: () => cubit.loadBlockedOrders(showLoading: false),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                child: Container(
+                child: SizedBox(
                   height: MediaQuery.of(context).size.height * 0.7,
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: ColorPalette.success.withAlpha(20),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.check_circle_outline_rounded,
-                            size: 56,
-                            color: ColorPalette.success,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Todo al Día',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No hay órdenes retenidas por descuento en este momento.\nCualquier modificación de precio en ventanilla aparecerá aquí en tiempo real.',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: ColorPalette.onSurfaceVariant,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
+                  child: const EmptyStateView(
+                    icon: Icons.check_circle_outline_rounded,
+                    iconColor: ColorPalette.success,
+                    title: 'Todo al Día',
+                    message:
+                        'No hay órdenes retenidas por descuento en este momento.\nCualquier modificación de precio en ventanilla aparecerá aquí en tiempo real.',
                   ),
                 ),
               ),
@@ -139,13 +124,13 @@ class _ApprovalsView extends StatelessWidget {
                           'Órdenes Pendientes (${state.blockedOrders.length})',
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: ColorPalette.onSurfaceVariant,
                           ),
                         ),
                         Text(
-                          'Descuentos en ventanilla',
+                          'Requiere Aprobación',
                           style: theme.textTheme.labelSmall?.copyWith(
-                            color: ColorPalette.outline,
+                            color: ColorPalette.warning,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
@@ -154,19 +139,19 @@ class _ApprovalsView extends StatelessWidget {
                 }
 
                 final order = state.blockedOrders[index - 1];
-                final isApproving = state.approvingOrderId == order.id;
-
-                return ApprovalOrderCard(
-                  order: order,
-                  isApproving: isApproving,
-                  onApprove: (reason) {
-                    cubit.approveOrder(order.id, reason: reason);
-                  },
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: ApprovalOrderCard(
+                    order: order,
+                    isApproving: state.approvingOrderId == order.id,
+                    onApprove: (reason) => cubit.approveOrder(order.id, reason: reason),
+                  ),
                 );
               },
             ),
           );
         },
+      ),
       ),
     );
   }

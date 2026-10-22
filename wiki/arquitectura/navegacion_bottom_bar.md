@@ -32,17 +32,20 @@ El enrutador (`AppRouter`) define una raíz con shell y rutas independientes:
 
 ---
 
-## 🧭 2. Los 5 Destinos del `NavigationBar` (Material 3)
+## 🧭 2. Destinos Adaptativos del `NavigationBar` (Material 3)
 
-La barra de navegación inferior (`src/modules/shell/widgets/bottom_nav_bar.dart`) expone 5 destinos claros:
+La barra de navegación inferior (`src/modules/shell/view/shell_screen.dart`) adapta sus opciones dinámicamente según los privilegios del usuario autenticado (`AppSessionState.isAdmin`):
 
-| Índice | Etiqueta | Icono | Descripción |
-| :---: | :--- | :--- | :--- |
-| **0** | **Inicio** | `Icons.dashboard_rounded` | Dashboard ejecutivo con métricas de ventas, órdenes y arqueos. |
-| **1** | **Aprobaciones** | `Icons.verified_user_rounded` | Bandeja prioritaria de órdenes bloqueadas (`isBlocked == true`) con badge numérico reactivo. |
-| **2** | **Órdenes** | `Icons.medical_services_rounded` | Catálogo y buscador de órdenes analíticas con visor de resultados. |
-| **3** | **Cajas** | `Icons.point_of_sale_rounded` | Monitor de turnos activos y cortes de caja en todas las sucursales. |
-| **4** | **Usuarios** | `Icons.manage_accounts_rounded` | Directorio institucional de colaboradores y botón `+ Nuevo Usuario`. |
+| Rama | Destino | Icono | Rol Requerido | Descripción |
+| :---: | :--- | :--- | :---: | :--- |
+| **0** | **Inicio** | `Icons.dashboard_rounded` | Todos | Dashboard ejecutivo con métricas de ventas, órdenes y arqueos. |
+| **1** | **Aprobaciones** | `Icons.verified_user_rounded` | **Admin** | Bandeja prioritaria de órdenes bloqueadas (`isBlocked == true`). |
+| **2** | **Órdenes** | `Icons.medical_services_rounded` | Todos | Catálogo y buscador de órdenes analíticas con visor de resultados. |
+| **3** | **Cajas** | `Icons.point_of_sale_rounded` | Todos | Monitor de turnos activos y cortes de caja en todas las sucursales. |
+| **4** | **Usuarios** | `Icons.manage_accounts_rounded` | **Admin** | Directorio institucional de colaboradores y botón `+ Nuevo Usuario`. |
+
+- **Vista Administrador:** Visualiza las 5 pestañas completas.
+- **Vista Supervisor Operativo (`!isAdmin`):** Visualiza únicamente 3 pestañas (*Inicio*, *Órdenes*, *Cajas*), asignando el índice de forma determinista a las ramas del `StatefulNavigationShell`.
 
 ---
 
@@ -69,6 +72,11 @@ String? guard(BuildContext context, GoRouterState state) {
 
   // 3. Si ya está autenticado e intenta ir a login -> Enviar al Dashboard
   if (isLoggingIn) {
+    return '/dashboard';
+  }
+
+  // 4. Si el usuario no es admin e intenta ir a aprobaciones o usuarios -> Redirigir a /dashboard
+  if (!sessionState.isAdmin && (currentLoc == '/approvals' || currentLoc == '/users')) {
     return '/dashboard';
   }
 

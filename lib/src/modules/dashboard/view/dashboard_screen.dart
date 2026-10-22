@@ -6,8 +6,12 @@ import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
 import 'package:serum_mobile/src/cubits/app_session_cubit/app_session_cubit.dart';
+import 'package:serum_mobile/src/modules/dashboard/widgets/branch_selector_modal.dart';
+import 'package:serum_mobile/src/modules/dashboard/widgets/kpi_grid.dart';
 import 'package:serum_mobile/src/modules/dashboard/widgets/pending_approvals_banner.dart';
-import 'package:serum_mobile/src/widgets/common/kpi_card.dart';
+import 'package:serum_mobile/src/modules/dashboard/widgets/quick_actions_section.dart';
+import 'package:serum_mobile/src/modules/dashboard/widgets/supervisor_header_card.dart';
+import 'package:serum_mobile/src/widgets/dialogs/confirm_action_dialog.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -81,23 +85,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ).format(amount);
   }
 
+  Future<void> _confirmLogout(BuildContext context) async {
+    final sessionCubit = context.read<AppSessionCubit>();
+    final confirmed = await ConfirmActionDialog.show(
+      context,
+      title: '¿Cerrar Sesión?',
+      message: 'Se cerrará tu sesión de supervisor en este dispositivo.',
+      confirmLabel: 'Cerrar Sesión',
+      cancelLabel: 'Cancelar',
+      isDestructive: true,
+      icon: Icons.logout_rounded,
+    );
+
+    if (confirmed) {
+      sessionCubit.logout();
+    }
+  }
+
+  Future<void> _openBranchSelector(BuildContext context) async {
+    final sessionCubit = context.read<AppSessionCubit>();
+    await sessionCubit.refreshBranches();
+    if (!context.mounted) return;
+
+    BranchSelectorModal.show(
+      context,
+      branches: sessionCubit.state.branches,
+      currentBranch: sessionCubit.state.currentBranch,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final sessionCubit = context.watch<AppSessionCubit>();
     final user = sessionCubit.state.currentUser;
     final branch = sessionCubit.state.currentBranch;
+    final hasMultipleBranches = sessionCubit.state.hasMultipleBranches;
+    final isAdmin = sessionCubit.state.isAdmin;
 
     final blockedOrders = _orders.where((o) => o.isBlocked).toList();
     final activeShifts = _shifts.where((s) => s.closedAt == null).toList();
 
-    // Total de ventas en centavos
     final totalSalesCents = _orders.fold<int>(
       0,
       (sum, order) => sum + order.totalPrice,
     );
 
-    // Total de pruebas solicitadas
     final totalTestsCount = _orders.fold<int>(
       0,
       (sum, order) => sum + order.items.length,
@@ -125,6 +158,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         actions: [
+          if (hasMultipleBranches)
+            IconButton(
+              tooltip: 'Cambiar Sucursal',
+              icon: const Icon(
+                Icons.swap_horiz_rounded,
+                color: ColorPalette.primary,
+              ),
+              onPressed: () => _openBranchSelector(context),
+            ),
+          IconButton(
+            tooltip: 'Actualizar',
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () => _loadData(showLoading: false),
+          ),
           IconButton(
             tooltip: 'Reportes Financieros',
             icon: const Icon(Icons.insights_rounded, color: ColorPalette.primary),
@@ -133,260 +180,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             tooltip: 'Cerrar Sesión',
             icon: const Icon(Icons.logout_rounded, color: ColorPalette.outline),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('¿Cerrar Sesión?'),
-                  content: const Text(
-                    'Se cerrará tu sesión de supervisor en este dispositivo.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      child: const Text('Cancelar'),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: ColorPalette.error,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(100, 40),
-                      ),
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                        sessionCubit.logout();
-                      },
-                      child: const Text('Cerrar Sesión'),
-                    ),
-                  ],
-                ),
-              );
-            },
+            onPressed: () => _confirmLogout(context),
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () => _loadData(showLoading: false),
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
-            : SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Header de Bienvenida con datos del supervisor
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: ColorPalette.surfaceContainerLowest,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: ColorPalette.outlineVariant,
-                          width: 0.8,
-                        ),
+      body: BlocListener<AppSessionCubit, AppSessionState>(
+        listenWhen: (prev, curr) =>
+            prev.currentBranch?.id != curr.currentBranch?.id,
+        listener: (context, state) {
+          _loadData(showLoading: true);
+        },
+        child: RefreshIndicator(
+          onRefresh: () => _loadData(showLoading: false),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SupervisorHeaderCard(
+                        user: user,
+                        branch: branch,
+                        onTapBranch: hasMultipleBranches
+                            ? () => _openBranchSelector(context)
+                            : null,
                       ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundColor: ColorPalette.primary.withAlpha(30),
-                            child: Text(
-                              (user?.name.isNotEmpty ?? false)
-                                  ? user!.name[0].toUpperCase()
-                                  : 'S',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: ColorPalette.primary,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  user?.name ?? 'Supervisor',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.location_on_rounded,
-                                      size: 14,
-                                      color: ColorPalette.primary,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        branch?.name ?? 'Sede Principal',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: ColorPalette.onSurfaceVariant,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: ColorPalette.primary.withAlpha(20),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'Nivel ${user?.accessLevel ?? 4}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: ColorPalette.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Banner Reactivo de Aprobaciones Pendientes
-                    PendingApprovalsBanner(
-                      pendingCount: blockedOrders.length,
-                      onTap: () => context.go('/approvals'),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Título de Métricas
-                    Text(
-                      'Métricas del Día',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Cuadrícula 2x2 de KPIs
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.25,
-                      children: [
-                        KpiCard(
-                          title: 'Ventas Totales',
-                          value: _formatCents(totalSalesCents),
-                          icon: Icons.payments_rounded,
-                          iconColor: ColorPalette.primary,
-                          subtitle: '${_orders.length} órdenes emitidas',
-                          onTap: () => context.go('/orders'),
-                        ),
-                        KpiCard(
-                          title: 'Órdenes Clínicas',
-                          value: '${_orders.length}',
-                          icon: Icons.receipt_long_rounded,
-                          iconColor: ColorPalette.secondary,
-                          subtitle: '$totalTestsCount pruebas solicitadas',
-                          onTap: () => context.go('/orders'),
-                        ),
-                        KpiCard(
-                          title: 'Turnos de Caja',
-                          value: '${activeShifts.length} abiertas',
-                          icon: Icons.point_of_sale_rounded,
-                          iconColor: ColorPalette.tertiary,
-                          subtitle: 'En todas las sucursales',
-                          onTap: () => context.go('/cash-shifts'),
-                        ),
-                        KpiCard(
-                          title: 'Por Autorizar',
-                          value: '${blockedOrders.length}',
-                          icon: Icons.verified_user_rounded,
-                          iconColor: blockedOrders.isNotEmpty
-                              ? ColorPalette.warning
-                              : ColorPalette.success,
-                          subtitle: blockedOrders.isNotEmpty
-                              ? 'Descuento retenido'
-                              : 'Todo al día',
+                      const SizedBox(height: 16),
+                      if (isAdmin) ...[
+                        PendingApprovalsBanner(
+                          pendingCount: blockedOrders.length,
                           onTap: () => context.go('/approvals'),
                         ),
+                        const SizedBox(height: 20),
                       ],
-                    ),
+                      Text(
+                        'Métricas del Día',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      KpiGrid(
+                        totalSalesFormatted: _formatCents(totalSalesCents),
+                        ordersCount: _orders.length,
+                        testsCount: totalTestsCount,
+                        activeShiftsCount: activeShifts.length,
+                        blockedOrdersCount: blockedOrders.length,
+                        onTapSales: () => context.go('/orders'),
+                        onTapOrders: () => context.go('/orders'),
+                        onTapShifts: () => context.go('/cash-shifts'),
+                        onTapApprovals: isAdmin ? () => context.go('/approvals') : null,
+                        showApprovalsKpi: isAdmin,
+                      ),
                     const SizedBox(height: 24),
-
-                    // Accesos Directos
-                    Text(
-                      'Acciones Rápidas',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      onPressed: () => context.push('/reports'),
-                      icon: const Icon(Icons.insights_rounded, size: 20),
-                      label: const Text('Ver Reportes y Analítica Ejecutiva'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: ColorPalette.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => context.go('/orders'),
-                            icon: const Icon(Icons.search_rounded, size: 20),
-                            label: const Text('Buscar Órdenes'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => context.go('/cash-shifts'),
-                            icon: const Icon(Icons.balance_rounded, size: 20),
-                            label: const Text('Ver Arqueos'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    QuickActionsSection(
+                      onReportsTap: () => context.push('/reports'),
+                      onOrdersTap: () => context.go('/orders'),
+                      onShiftsTap: () => context.go('/cash-shifts'),
                     ),
                     const SizedBox(height: 24),
                   ],
                 ),
               ),
+        ),
       ),
     );
   }

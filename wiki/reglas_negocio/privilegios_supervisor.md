@@ -21,12 +21,26 @@ El sistema clasifica a los usuarios según su nivel numérico de privilegios:
 | **1** | Paciente / Consulta web | Portal Web Paciente | Consulta exclusiva de sus propios resultados. |
 | **2** | Flebotomista / Recepcionista | Terminal de Ventanilla Desktop | Registro de pacientes, cotizaciones, órdenes con precios de catálogo. |
 | **3** | Bioanalista / Químico de Banco | Terminal de Laboratorio Desktop | Validación técnica y captura analítica de resultados de laboratorio. |
-| **4** | **Supervisor / Administrador** | **Serum Mobile** y Desktop | **Aprobación de órdenes retenidas (`isBlocked`), auditoría de arqueos y supervisión multisede.** |
-| **5** | **Director Médico / Dueño** | **Serum Mobile** y Desktop | **Acceso total: métricas financieras consolidadas, auditoría global y alta de nuevos usuarios.** |
+| **4** | **Supervisor Clínico** | **Serum Mobile** y Desktop | **Supervisión operativa, consulta de órdenes analíticas, monitoreo de turnos de caja y KPIs de ventas.** |
+| **5** | **Director Médico / Dueño / Admin** | **Serum Mobile** y Desktop | **Acceso total y exclusivo: aprobación de órdenes retenidas (`isBlocked`), gestión/alta de usuarios y métricas avanzadas.** |
 
 ---
 
-## 🚫 2. Barrera de Acceso a Serum Mobile
+## 🔐 2. Restricción Exclusiva para Administradores en Serum Mobile
+
+En **Serum Mobile**, las funciones críticas de **Aprobación de Órdenes Retenidas** (`/approvals`) y **Administración de Usuarios** (`/users`) están restringidas **exclusivamente a usuarios con privilegios de Administrador** (`AppSessionState.isAdmin`):
+- **Criterios de Administrador:**
+  1. Usuario Root (`isRootUser`).
+  2. Nivel de acceso 5 o superior (`accessLevel >= 5`).
+  3. Rol del sistema `'Admin'` o `'Administrador'` (case-insensitive).
+- **Comportamiento para Supervisores Operativos (`accessLevel == 4`, no admin):**
+  - La barra de navegación inferior oculta las pestañas de *Aprobaciones* y *Usuarios*, mostrando solo 3 destinos (*Inicio*, *Órdenes*, *Cajas*).
+  - El enrutador (`AppRouter.redirect`) bloquea cualquier intento de navegación directa redirigiendo a `/dashboard`.
+  - El Dashboard oculta el banner de órdenes pendientes de aprobación y la tarjeta *Por Autorizar* de la grilla de KPIs.
+
+---
+
+## 🚫 3. Barrera de Acceso a Serum Mobile
 
 - **Regla Estricta:** El acceso a la aplicación móvil requiere **`accessLevel > 3`**.
 - Si un usuario con rol de recepcionista (`accessLevel == 2`) o bioanalista (`accessLevel == 3`) intenta autenticarse en Serum Mobile:
@@ -36,7 +50,7 @@ El sistema clasifica a los usuarios según su nivel numérico de privilegios:
 
 ---
 
-## 📝 3. Trazabilidad Inmutable de Aprobaciones
+## 📝 4. Trazabilidad Inmutable de Aprobaciones
 
 Cada vez que un supervisor aprueba una orden bloqueada (`isBlocked == true`) desde su dispositivo móvil:
 1. La petición `POST /api/v1/orders/{order_id}/approve` viaja firmada con el Bearer JWT del supervisor.

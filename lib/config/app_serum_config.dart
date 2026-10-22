@@ -50,4 +50,8 @@ class AppSerumConfig implements SerumClientConfig {
   set servinNickname(String? nickname) {
     _servinNickname = nickname;
   }
+
+  void setServinNickname(String? nickname) {
+    _servinNickname = nickname;
+  }
 }

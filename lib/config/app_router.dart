@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../src/cubits/app_session_cubit/app_session_cubit.dart';
+import '../src/modules/splash/view/splash_screen.dart';
+import '../src/modules/activation/view/activation_screen.dart';
 import '../src/modules/auth/view/login_screen.dart';
+import '../src/modules/inactive/view/inactive_screen.dart';
 import '../src/modules/shell/view/shell_screen.dart';
 import '../src/modules/dashboard/view/dashboard_screen.dart';
 import '../src/modules/approvals/view/approvals_screen.dart';
@@ -30,6 +33,9 @@ class GoRouterRefreshStream extends ChangeNotifier {
 class AppRouter {
   AppRouter._();
 
+  static const String splash = '/splash';
+  static const String activation = '/activation';
+  static const String inactive = '/inactive';
   static const String login = '/login';
   static const String dashboard = '/dashboard';
   static const String approvals = '/approvals';
@@ -38,7 +44,10 @@ class AppRouter {
   static const String reports = '/reports';
   static const String users = '/users';
 
-  static GoRouter createRouter(AppSessionCubit sessionCubit) {
+  static GoRouter createRouter(
+    AppSessionCubit sessionCubit, {
+    String? initialLocation,
+  }) {
     final rootNavigatorKey = GlobalKey<NavigatorState>();
     final dashboardNavKey = GlobalKey<NavigatorState>(debugLabel: 'dashboard');
     final approvalsNavKey = GlobalKey<NavigatorState>(debugLabel: 'approvals');
@@ -48,30 +57,68 @@ class AppRouter {
 
     return GoRouter(
       navigatorKey: rootNavigatorKey,
-      initialLocation: dashboard,
+      initialLocation: initialLocation ?? splash,
       refreshListenable: GoRouterRefreshStream(sessionCubit.stream),
       redirect: (context, state) {
         final sessionState = sessionCubit.state;
-        final isLoggingIn = state.matchedLocation == login;
+        final currentLoc = state.matchedLocation;
+        final isSplashing = currentLoc == splash;
+        final isLoggingIn = currentLoc == login;
+        final isActivating = currentLoc == activation;
+        final isInactive = currentLoc == inactive;
 
-        if (sessionState.status == AppSessionStatus.initial ||
-            sessionState.status == AppSessionStatus.loading) {
-          return null;
+        final isInitial = sessionState.status == AppSessionStatus.initial ||
+            sessionState.status == AppSessionStatus.loading;
+
+        // 1. Inicialización en progreso -> permanecer en /splash
+        if (isInitial) {
+          return isSplashing ? null : splash;
         }
 
-        // Si no está autenticado, redirigir a Login
+        // 2. Instancia no activada -> Redirigir a /activation
+        if (sessionState.status == AppSessionStatus.unactivated) {
+          return isActivating ? null : activation;
+        }
+
+        // 3. Instancia inactiva / suspendida -> Redirigir a /inactive
+        if (sessionState.status == AppSessionStatus.instanceInactive) {
+          return isInactive ? null : inactive;
+        }
+
+        // 4. Usuario no autenticado -> Redirigir a /login
         if (!sessionState.isAuthenticated) {
           return isLoggingIn ? null : login;
         }
 
-        // Si ya está autenticado e intenta ir al Login o raíz, llevar al Dashboard
-        if (isLoggingIn || state.matchedLocation == '/') {
+        // 5. Si ya está autenticado e intenta ir a splash, login, activación, inactivo o raíz -> dashboard
+        if (isSplashing || isLoggingIn || isActivating || isInactive || currentLoc == '/') {
           return dashboard;
+        }
+
+        // 6. Restricción para no-administradores: aprobaciones y usuarios son exclusivos de admins
+        if (!sessionState.isAdmin) {
+          final isApprovals = currentLoc == approvals || currentLoc.startsWith('$approvals/');
+          final isUsers = currentLoc == users || currentLoc.startsWith('$users/');
+          if (isApprovals || isUsers) {
+            return dashboard;
+          }
         }
 
         return null;
       },
       routes: [
+        GoRoute(
+          path: splash,
+          builder: (context, state) => const SplashScreen(),
+        ),
+        GoRoute(
+          path: activation,
+          builder: (context, state) => const ActivationScreen(),
+        ),
+        GoRoute(
+          path: inactive,
+          builder: (context, state) => const InactiveScreen(),
+        ),
         GoRoute(
           path: login,
           builder: (context, state) => const LoginScreen(),

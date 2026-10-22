@@ -6,6 +6,8 @@ import 'package:serum_mobile/src/cubits/user_cubit/user_mobile_cubit.dart';
 import 'package:serum_mobile/src/cubits/user_cubit/user_mobile_state.dart';
 import 'package:serum_mobile/src/modules/user/widgets/user_card.dart';
 import 'package:serum_mobile/src/modules/user/widgets/user_form_modal.dart';
+import 'package:serum_mobile/src/widgets/common/app_search_bar.dart';
+import 'package:serum_mobile/src/widgets/common/empty_state_view.dart';
 
 class UserScreen extends StatelessWidget {
   const UserScreen({super.key});
@@ -110,109 +112,67 @@ class _UserViewState extends State<_UserView> {
             onRefresh: () => cubit.loadData(showLoading: false),
             child: Column(
               children: [
-                // Barra de Búsqueda y Métricas
-                Container(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                  decoration: const BoxDecoration(
-                    color: ColorPalette.surface,
-                  ),
-                  child: Column(
+                // Barra de Búsqueda Reusable
+                AppSearchBar(
+                  controller: _searchController,
+                  hintText: 'Buscar por nombre, usuario o email...',
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+                  onChanged: (q) => cubit.setSearchQuery(q),
+                  onClear: () => cubit.setSearchQuery(''),
+                ),
+
+                // Contador de Personal y Filtro de Roles
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: Row(
                     children: [
-                      // Barra de Búsqueda
-                      TextField(
-                        controller: _searchController,
-                        onChanged: (q) => cubit.setSearchQuery(q),
-                        decoration: InputDecoration(
-                          hintText: 'Buscar por nombre, usuario o email...',
-                          prefixIcon: const Icon(
-                            Icons.search_rounded,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: ColorPalette.primary.withAlpha(20),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${state.activeUsersCount} activos de ${state.users.length}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
                             color: ColorPalette.primary,
-                          ),
-                          suffixIcon: _searchController.text.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear_rounded, size: 18),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    cubit.setSearchQuery('');
-                                  },
-                                )
-                              : null,
-                          filled: true,
-                          fillColor: ColorPalette.surfaceContainerHighest.withAlpha(50),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: const BorderSide(
-                              color: ColorPalette.outlineVariant,
-                              width: 0.8,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: const BorderSide(
-                              color: ColorPalette.outlineVariant,
-                              width: 0.8,
-                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
-
-                      // Contador de Personal y Filtro de Roles
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: ColorPalette.primary.withAlpha(20),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${state.activeUsersCount} activos de ${state.users.length}',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: ColorPalette.primary,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _RoleFilterChip(
+                                label: 'Todos',
+                                isSelected: state.selectedRoleFilter == null,
+                                onTap: () => cubit.setRoleFilter(null),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  _RoleFilterChip(
-                                    label: 'Todos',
-                                    isSelected: state.selectedRoleFilter == null,
-                                    onTap: () => cubit.setRoleFilter(null),
+                              const SizedBox(width: 6),
+                              ...state.roles.map((r) {
+                                final isSelected =
+                                    state.selectedRoleFilter?.toLowerCase() ==
+                                        r.name.toLowerCase();
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 6.0),
+                                  child: _RoleFilterChip(
+                                    label: r.name,
+                                    isSelected: isSelected,
+                                    onTap: () => cubit.setRoleFilter(
+                                      isSelected ? null : r.name,
+                                    ),
                                   ),
-                                  const SizedBox(width: 6),
-                                  ...state.roles.map((r) {
-                                    final isSelected =
-                                        state.selectedRoleFilter?.toLowerCase() ==
-                                            r.name.toLowerCase();
-                                    return Padding(
-                                      padding: const EdgeInsets.only(right: 6.0),
-                                      child: _RoleFilterChip(
-                                        label: r.name,
-                                        isSelected: isSelected,
-                                        onTap: () => cubit.setRoleFilter(
-                                          isSelected ? null : r.name,
-                                        ),
-                                      ),
-                                    );
-                                  }),
-                                ],
-                              ),
-                            ),
+                                );
+                              }),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
@@ -225,44 +185,16 @@ class _UserViewState extends State<_UserView> {
                   child: state.isLoading && state.users.isEmpty
                       ? const Center(child: CircularProgressIndicator())
                       : filteredUsers.isEmpty
-                          ? Center(
-                              child: SingleChildScrollView(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24.0),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.person_search_rounded,
-                                        size: 56,
-                                        color: ColorPalette.onSurfaceVariant
-                                            .withAlpha(120),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        state.searchQuery.isNotEmpty ||
-                                                state.selectedRoleFilter != null
-                                            ? 'No se encontraron colaboradores'
-                                            : 'No hay usuarios registrados',
-                                        style: theme.textTheme.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        state.searchQuery.isNotEmpty ||
-                                                state.selectedRoleFilter != null
-                                            ? 'Intenta con otros términos o limpia los filtros.'
-                                            : 'Utiliza el botón flotante para crear el primer colaborador.',
-                                        textAlign: TextAlign.center,
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: ColorPalette.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                          ? EmptyStateView(
+                              icon: Icons.person_search_rounded,
+                              title: state.searchQuery.isNotEmpty ||
+                                      state.selectedRoleFilter != null
+                                  ? 'No se encontraron colaboradores'
+                                  : 'No hay usuarios registrados',
+                              message: state.searchQuery.isNotEmpty ||
+                                      state.selectedRoleFilter != null
+                                  ? 'Intenta con otros términos o limpia los filtros.'
+                                  : 'Utiliza el botón flotante para crear el primer colaborador.',
                             )
                           : ListView.separated(
                               padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
@@ -322,7 +254,7 @@ class _RoleFilterChip extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 11,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             color: isSelected ? Colors.white : ColorPalette.onSurface,
           ),
         ),

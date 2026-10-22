@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
+import 'package:serum_mobile/src/cubits/app_session_cubit/app_session_cubit.dart';
 import 'package:serum_mobile/src/cubits/order_cubit/order_mobile_cubit.dart';
 import 'package:serum_mobile/src/modules/order/widgets/order_card.dart';
+import 'package:serum_mobile/src/widgets/common/app_search_bar.dart';
+import 'package:serum_mobile/src/widgets/common/empty_state_view.dart';
 
 class OrderScreen extends StatelessWidget {
   const OrderScreen({super.key});
@@ -45,37 +48,34 @@ class _OrderViewState extends State<_OrderView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final cubit = context.read<OrderMobileCubit>();
 
-    return Scaffold(
-      backgroundColor: ColorPalette.surface,
-      appBar: AppBar(
-        title: const Text('Órdenes Clínicas'),
-      ),
-      body: Column(
-        children: [
-          // Barra de búsqueda en vivo
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: TextField(
-              controller: _searchController,
-              onChanged: cubit.setSearchQuery,
-              decoration: InputDecoration(
-                hintText: 'Buscar por folio, paciente o médico...',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 20),
-                        onPressed: () {
-                          _searchController.clear();
-                          cubit.setSearchQuery('');
-                        },
-                      )
-                    : null,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
+    return BlocListener<AppSessionCubit, AppSessionState>(
+      listenWhen: (prev, curr) =>
+          prev.currentBranch?.id != curr.currentBranch?.id,
+      listener: (context, sessionState) {
+        cubit.loadOrders();
+      },
+      child: Scaffold(
+        backgroundColor: ColorPalette.surface,
+        appBar: AppBar(
+          title: const Text('Órdenes Clínicas'),
+          actions: [
+            IconButton(
+              tooltip: 'Actualizar',
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: () => cubit.loadOrders(),
             ),
+          ],
+        ),
+        body: Column(
+        children: [
+          // Barra de búsqueda unificada
+          AppSearchBar(
+            controller: _searchController,
+            hintText: 'Buscar por folio, paciente o médico...',
+            onChanged: cubit.setSearchQuery,
+            onClear: () => cubit.setSearchQuery(''),
           ),
 
           // Chips de Filtro por Estado
@@ -131,38 +131,14 @@ class _OrderViewState extends State<_OrderView> {
                     onRefresh: () => cubit.loadOrders(showLoading: false),
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      child: Container(
+                      child: SizedBox(
                         height: MediaQuery.of(context).size.height * 0.55,
-                        padding: const EdgeInsets.all(32),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.search_off_rounded,
-                                size: 52,
-                                color: ColorPalette.outline.withAlpha(120),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Sin coincidencias',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                state.searchQuery.isNotEmpty
-                                    ? 'No encontramos órdenes para "${state.searchQuery}".'
-                                    : 'No hay órdenes en la categoría seleccionada.',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: ColorPalette.onSurfaceVariant,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
+                        child: EmptyStateView(
+                          icon: Icons.search_off_rounded,
+                          title: 'Sin coincidencias',
+                          message: state.searchQuery.isNotEmpty
+                              ? 'No encontramos órdenes para "${state.searchQuery}".'
+                              : 'No hay órdenes en la categoría seleccionada.',
                         ),
                       ),
                     ),
@@ -184,6 +160,7 @@ class _OrderViewState extends State<_OrderView> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

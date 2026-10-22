@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
+import 'package:serum_mobile/src/modules/user/widgets/user_branch_selector.dart';
+import 'package:serum_mobile/src/modules/user/widgets/user_role_dropdown.dart';
 
 class UserFormModal extends StatefulWidget {
   final List<RoleInDb> roles;
@@ -58,7 +60,6 @@ class _UserFormModalState extends State<UserFormModal> {
     if (widget.roles.isNotEmpty) {
       _selectedRole = widget.roles.first;
     }
-    // Por defecto seleccionar todas las sucursales si existen
     for (final b in widget.branches) {
       _selectedBranchIds.add(b.id);
     }
@@ -180,7 +181,6 @@ class _UserFormModalState extends State<UserFormModal> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Nombre Completo
                     TextFormField(
                       controller: _nameCtrl,
                       decoration: const InputDecoration(
@@ -197,7 +197,6 @@ class _UserFormModalState extends State<UserFormModal> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Username y Contraseña
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -254,7 +253,6 @@ class _UserFormModalState extends State<UserFormModal> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Correo y Teléfono
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -285,72 +283,25 @@ class _UserFormModalState extends State<UserFormModal> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Selector de Rol
-                    DropdownButtonFormField<RoleInDb>(
-                      initialValue: _selectedRole,
-                      decoration: const InputDecoration(
-                        labelText: 'Rol Clínico / Administrativo *',
-                        prefixIcon: Icon(Icons.security_rounded),
-                      ),
-                      items: widget.roles.map((r) {
-                        return DropdownMenuItem<RoleInDb>(
-                          value: r,
-                          child: Text('${r.name} (Nivel ${r.accessLevel})'),
-                        );
-                      }).toList(),
-                      onChanged: (role) {
-                        setState(() => _selectedRole = role);
-                      },
-                      validator: (value) {
-                        if (value == null && widget.roles.isNotEmpty) {
-                          return 'Selecciona un rol';
-                        }
-                        return null;
-                      },
+                    // Selector Modular de Rol
+                    UserRoleDropdown(
+                      roles: widget.roles,
+                      selectedRole: _selectedRole,
+                      onChanged: (role) => setState(() => _selectedRole = role),
                     ),
                     const SizedBox(height: 14),
 
-                    // Selector de Sucursales
-                    Text(
-                      'Sucursales Autorizadas',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: ColorPalette.onSurfaceVariant,
-                      ),
+                    // Selector Modular de Sucursales
+                    UserBranchSelector(
+                      branches: widget.branches,
+                      selectedBranchIds: _selectedBranchIds,
+                      onChanged: (updated) => setState(() {
+                        _selectedBranchIds.clear();
+                        _selectedBranchIds.addAll(updated);
+                      }),
                     ),
-                    const SizedBox(height: 6),
-                    if (widget.branches.isEmpty) ...[
-                      Text(
-                        'No hay sucursales registradas (se asignará global).',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: ColorPalette.onSurfaceVariant,
-                        ),
-                      ),
-                    ] else ...[
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: widget.branches.map((b) {
-                          final isSelected = _selectedBranchIds.contains(b.id);
-                          return FilterChip(
-                            label: Text(b.name),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() {
-                                if (selected) {
-                                  _selectedBranchIds.add(b.id);
-                                } else {
-                                  _selectedBranchIds.remove(b.id);
-                                }
-                              });
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    ],
                     const SizedBox(height: 12),
 
-                    // Switch Estado Activo
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text(
@@ -371,7 +322,6 @@ class _UserFormModalState extends State<UserFormModal> {
             ),
           ),
 
-          // Botón de Envío
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: ColorPalette.primary,

@@ -23,14 +23,25 @@ class DateRangeSelector extends StatelessWidget {
     if (startDate == 0 || endDate == 0) return '';
     final start = DateTime.fromMillisecondsSinceEpoch(startDate);
     final end = DateTime.fromMillisecondsSinceEpoch(endDate);
-    final fmt = DateFormat('dd MMM yyyy', 'es');
 
-    if (start.year == end.year &&
-        start.month == end.month &&
-        start.day == end.day) {
-      return fmt.format(start);
+    try {
+      final fmt = DateFormat('dd MMM yyyy', 'es');
+      if (start.year == end.year &&
+          start.month == end.month &&
+          start.day == end.day) {
+        return fmt.format(start);
+      }
+      return '${fmt.format(start)} — ${fmt.format(end)}';
+    } catch (_) {
+      // Fallback seguro en caso de que los símbolos de localización no estén cargados
+      final fallbackFmt = DateFormat('dd/MM/yyyy');
+      if (start.year == end.year &&
+          start.month == end.month &&
+          start.day == end.day) {
+        return fallbackFmt.format(start);
+      }
+      return '${fallbackFmt.format(start)} — ${fallbackFmt.format(end)}';
     }
-    return '${fmt.format(start)} — ${fmt.format(end)}';
   }
 
   Future<void> _pickCustomRange(BuildContext context) async {

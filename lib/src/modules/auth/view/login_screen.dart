@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:serum_mobile/config/app_theme.dart';
 import 'package:serum_mobile/src/cubits/app_session_cubit/app_session_cubit.dart';
+import 'package:serum_mobile/src/widgets/dialogs/confirm_action_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,9 +36,42 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final servin = context.watch<AppSessionCubit>().servin;
 
     return Scaffold(
       backgroundColor: ColorPalette.surface,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          if (servin != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                tooltip: 'Desvincular o cambiar de laboratorio',
+                icon: const Icon(
+                  Icons.phonelink_erase_rounded,
+                  color: ColorPalette.outline,
+                ),
+                onPressed: () async {
+                  final confirmed = await ConfirmActionDialog.show(
+                    context,
+                    title: '¿Desvincular Dispositivo?',
+                    message:
+                        '¿Deseas desvincular este dispositivo de "${servin.name}"? Requerirá un nuevo código de activación para ingresar.',
+                    confirmLabel: 'Desvincular',
+                    isDestructive: true,
+                    icon: Icons.phonelink_erase_rounded,
+                  );
+
+                  if (confirmed && context.mounted) {
+                    await context.read<AppSessionCubit>().exitBusiness();
+                  }
+                },
+              ),
+            ),
+        ],
+      ),
       body: BlocConsumer<AppSessionCubit, AppSessionState>(
         listener: (context, state) {
           if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
@@ -89,7 +123,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 20),
                       // Brand Header
                       Center(
                         child: Container(
@@ -116,6 +149,46 @@ class _LoginScreenState extends State<LoginScreen> {
                           letterSpacing: -0.5,
                         ),
                       ),
+                      if (state.servin != null) ...[
+                        const SizedBox(height: 10),
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: ColorPalette.primary.withAlpha(20),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: ColorPalette.primary.withAlpha(45),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.domain_rounded,
+                                  size: 15,
+                                  color: ColorPalette.primary,
+                                ),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    state.servin!.name,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: ColorPalette.primary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 6),
                       Text(
                         'Supervisión y Control Médico Ejecutivo',
@@ -125,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 36),
+                      const SizedBox(height: 32),
 
                       // Card de Formulario
                       Card(
@@ -224,6 +297,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 32),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(
                             Icons.shield_outlined,
@@ -231,10 +305,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: ColorPalette.outline,
                           ),
                           const SizedBox(width: 6),
-                          Text(
-                            'Conexión segura con Serum LIS Core',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: ColorPalette.outline,
+                          Flexible(
+                            child: Text(
+                              'Conexión segura con Serum LIS Core',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: ColorPalette.outline,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],

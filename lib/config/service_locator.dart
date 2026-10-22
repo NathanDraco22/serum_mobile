@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:serum_business/serum_business.dart';
+import 'package:serum_mobile/src/core/app_config_manager.dart';
 
 final sl = GetIt.instance;
 
@@ -7,10 +8,12 @@ final sl = GetIt.instance;
 Future<void> setupServiceLocator() async {
   // Almacenamiento seguro local
   sl.registerLazySingleton<TokenStorage>(() => HiveTokenStorage());
+  sl.registerLazySingleton<AppConfigStore>(() => AppConfigManager());
 
   // DataSources
   sl.registerLazySingleton<AppSettingsDataSource>(() => AppSettingsDataSource());
   sl.registerLazySingleton<AuthsDataSource>(() => AuthsDataSource());
+  sl.registerLazySingleton<ServinDataSource>(() => ServinDataSource());
   sl.registerLazySingleton<UsersDataSource>(() => UsersDataSource());
   sl.registerLazySingleton<BranchesDataSource>(() => BranchesDataSource());
   sl.registerLazySingleton<CashShiftsDataSource>(() => CashShiftsDataSource());
@@ -29,6 +32,12 @@ Future<void> setupServiceLocator() async {
     () => AuthRepository(
       dataSource: sl<AuthsDataSource>(),
       tokenStorage: sl<TokenStorage>(),
+    ),
+  );
+  sl.registerLazySingleton<ServinRepository>(
+    () => ServinRepository(
+      servinDataSource: sl<ServinDataSource>(),
+      appConfigStore: sl<AppConfigStore>(),
     ),
   );
   sl.registerLazySingleton<BranchesRepository>(

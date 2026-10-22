@@ -3,8 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
+import 'package:serum_mobile/src/cubits/app_session_cubit/app_session_cubit.dart';
 import 'package:serum_mobile/src/cubits/cash_shift_cubit/cash_shift_mobile_cubit.dart';
 import 'package:serum_mobile/src/modules/cash_shift/widgets/shift_breakdown_card.dart';
+import 'package:serum_mobile/src/widgets/common/app_search_bar.dart';
+import 'package:serum_mobile/src/widgets/common/empty_state_view.dart';
 
 class CashShiftScreen extends StatelessWidget {
   const CashShiftScreen({super.key});
@@ -53,15 +56,27 @@ class _CashShiftViewState extends State<_CashShiftView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final cubit = context.read<CashShiftMobileCubit>();
 
-    return Scaffold(
-      backgroundColor: ColorPalette.surface,
-      appBar: AppBar(
-        title: const Text('Monitor de Arqueos y Caja'),
-      ),
-      body: Column(
+    return BlocListener<AppSessionCubit, AppSessionState>(
+      listenWhen: (prev, curr) =>
+          prev.currentBranch?.id != curr.currentBranch?.id,
+      listener: (context, sessionState) {
+        cubit.loadShifts();
+      },
+      child: Scaffold(
+        backgroundColor: ColorPalette.surface,
+        appBar: AppBar(
+          title: const Text('Monitor de Arqueos y Caja'),
+          actions: [
+            IconButton(
+              tooltip: 'Actualizar',
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: () => cubit.loadShifts(),
+            ),
+          ],
+        ),
+        body: Column(
         children: [
           // Métricas Resumen Superior
           BlocBuilder<CashShiftMobileCubit, CashShiftMobileState>(
@@ -110,27 +125,13 @@ class _CashShiftViewState extends State<_CashShiftView> {
             },
           ),
 
-          // Buscador
-          Padding(
+          // Buscador Reusable
+          AppSearchBar(
+            controller: _searchController,
+            hintText: 'Buscar por sucursal o cajero...',
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              controller: _searchController,
-              onChanged: cubit.setSearchQuery,
-              decoration: InputDecoration(
-                hintText: 'Buscar por sucursal o cajero...',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 20),
-                        onPressed: () {
-                          _searchController.clear();
-                          cubit.setSearchQuery('');
-                        },
-                      )
-                    : null,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-            ),
+            onChanged: cubit.setSearchQuery,
+            onClear: () => cubit.setSearchQuery(''),
           ),
           const SizedBox(height: 8),
 
@@ -139,7 +140,7 @@ class _CashShiftViewState extends State<_CashShiftView> {
             buildWhen: (prev, curr) => prev.filter != curr.filter,
             builder: (context, state) {
               return SizedBox(
-                height: 42,
+                height: 44,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -187,38 +188,14 @@ class _CashShiftViewState extends State<_CashShiftView> {
                     onRefresh: () => cubit.loadShifts(showLoading: false),
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      child: Container(
+                      child: SizedBox(
                         height: MediaQuery.of(context).size.height * 0.45,
-                        padding: const EdgeInsets.all(32),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.point_of_sale_outlined,
-                                size: 52,
-                                color: ColorPalette.outline.withAlpha(120),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Sin turnos registrados',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                state.searchQuery.isNotEmpty
-                                    ? 'No encontramos turnos para "${state.searchQuery}".'
-                                    : 'No hay turnos bajo el filtro seleccionado.',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: ColorPalette.onSurfaceVariant,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
+                        child: EmptyStateView(
+                          icon: Icons.point_of_sale_outlined,
+                          title: 'Sin turnos registrados',
+                          message: state.searchQuery.isNotEmpty
+                              ? 'No encontramos turnos para "${state.searchQuery}".'
+                              : 'No hay turnos bajo el filtro seleccionado.',
                         ),
                       ),
                     ),
@@ -240,6 +217,7 @@ class _CashShiftViewState extends State<_CashShiftView> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

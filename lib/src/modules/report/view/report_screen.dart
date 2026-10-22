@@ -5,6 +5,7 @@ import 'package:serum_mobile/config/app_theme.dart';
 import 'package:serum_mobile/src/cubits/app_session_cubit/app_session_cubit.dart';
 import 'package:serum_mobile/src/cubits/report_cubit/report_mobile_cubit.dart';
 import 'package:serum_mobile/src/cubits/report_cubit/report_mobile_state.dart';
+import 'package:serum_mobile/src/modules/dashboard/widgets/branch_selector_modal.dart';
 import 'package:serum_mobile/src/modules/report/widgets/date_range_selector.dart';
 import 'package:serum_mobile/src/modules/report/widgets/financial_kpis_section.dart';
 import 'package:serum_mobile/src/modules/report/widgets/payment_methods_chart.dart';
@@ -36,24 +37,63 @@ class _ReportView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cubit = context.read<ReportMobileCubit>();
+    final sessionCubit = context.watch<AppSessionCubit>();
+    final currentBranch = sessionCubit.state.currentBranch;
+    final hasMultipleBranches = sessionCubit.state.hasMultipleBranches;
 
-    return Scaffold(
-      backgroundColor: ColorPalette.surface,
-      appBar: AppBar(
-        title: Text(
-          'Reportes Ejecutivos',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w800,
+    return BlocListener<AppSessionCubit, AppSessionState>(
+      listenWhen: (prev, curr) =>
+          prev.currentBranch?.id != curr.currentBranch?.id,
+      listener: (context, sessionState) {
+        cubit.updateBranchFilter(sessionState.currentBranch?.id);
+      },
+      child: Scaffold(
+        backgroundColor: ColorPalette.surface,
+        appBar: AppBar(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Reportes Ejecutivos',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              Text(
+                currentBranch?.name ?? 'Sede Principal',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: ColorPalette.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
+          actions: [
+            if (hasMultipleBranches)
+              IconButton(
+                tooltip: 'Cambiar Sucursal',
+                icon: const Icon(
+                  Icons.swap_horiz_rounded,
+                  color: ColorPalette.primary,
+                ),
+                onPressed: () async {
+                  await sessionCubit.refreshBranches();
+                  if (!context.mounted) return;
+                  BranchSelectorModal.show(
+                    context,
+                    branches: sessionCubit.state.branches,
+                    currentBranch: sessionCubit.state.currentBranch,
+                  );
+                },
+              ),
+            IconButton(
+              tooltip: 'Refrescar',
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: () => cubit.loadReports(),
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Refrescar',
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => cubit.loadReports(),
-          ),
-        ],
-      ),
       body: BlocBuilder<ReportMobileCubit, ReportMobileState>(
         builder: (context, state) {
           return RefreshIndicator(
@@ -125,6 +165,7 @@ class _ReportView extends StatelessWidget {
             ),
           );
         },
+      ),
       ),
     );
   }

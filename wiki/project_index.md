@@ -83,6 +83,13 @@ serum_mobile/
 │       │   ├── report_cubit/           # Métricas financieras y auditorías
 │       │   └── user_cubit/             # Directorio y creación de usuarios
 │       ├── modules/                    # Módulos de interfaz organizados en view/ y widgets/
+│       │   ├── splash/                 # Pantalla inicial de arranque y resolución de sesión
+│       │   │   └── view/splash_screen.dart
+│       │   ├── activation/             # Activación y enlace con Servin (alias + API Key)
+│       │   │   ├── cubit/activation_cubit.dart, activation_state.dart
+│       │   │   └── view/activation_screen.dart
+│       │   ├── inactive/               # Pantalla de instancia desactivada/suspendida
+│       │   │   └── view/inactive_screen.dart
 │       │   ├── auth/                   # Pantalla de Login móvil
 │       │   │   ├── view/login_screen.dart
 │       │   │   └── widgets/login_card.dart
@@ -110,11 +117,13 @@ serum_mobile/
 │       ├── tools/                      # Formateadores y calculadoras
 │       │   ├── formatters/             # Formateo de centavos a moneda, fechas, folios
 │       │   └── calculators/            # Agregaciones de totales y porcentajes
-│       └── widgets/                    # Widgets transversales (NO usar carpeta 'shared')
-│           ├── common/                 # Botones, badges de estado, loaders
+│       ├── widgets/                    # Widgets transversales (NO usar carpeta 'shared')
+│           ├── common/                 # Botones, badges de estado, loaders, barras y empty states
 │           │   ├── kpi_card.dart
 │           │   ├── status_badge.dart
-│           │   └── medical_flag_badge.dart
+│           │   ├── medical_flag_badge.dart
+│           │   ├── empty_state_view.dart
+│           │   └── app_search_bar.dart
 │           └── dialogs/                # Modales de confirmación
 │               ├── confirm_action_dialog.dart
 │               └── reason_prompt_dialog.dart
@@ -133,6 +142,9 @@ serum_mobile/
 
 | Módulo | Ruta | Descripción Funcional |
 | :--- | :--- | :--- |
+| **Splash** | `/splash` | Pantalla inicial limpia de resolución de sesión y configuración local que previene cualquier parpadeo de navegación. |
+| **Activación** | `/activation` | Enlace inicial del dispositivo mediante el alias del laboratorio y la clave de activación (`Servin`). |
+| **Inactivo** | `/inactive` | Pantalla de bloqueo y advertencia cuando la suscripción o la instancia ha sido suspendida. |
 | **Auth** | `/login` | Autenticación mediante credenciales con validación de nivel de supervisor (`accessLevel > 3`). |
 | **Shell** | `/` (Base) | Contenedor principal con `NavigationBar` ergonómica de 5 pestañas manteniendo estados con `StatefulShellRoute`. |
 | **Dashboard** | `/dashboard` | Resumen ejecutivo del día: ingresos en centavos, órdenes activas, turnos abiertos y banner animado de aprobaciones pendientes. |
@@ -149,6 +161,7 @@ serum_mobile/
 | Cubit | Ubicación | Responsabilidad |
 | :--- | :--- | :--- |
 | **`AppSessionCubit`** | `src/cubits/app_session_cubit/` | Maneja la sesión del usuario autenticado, hidratación inicial con JWT y datos del supervisor. |
+| **`ActivationCubit`** | `src/modules/activation/cubit/` | Orquesta la activación de terminal y obtención de la configuración del `Servin`. |
 | **`ApprovalsCubit`** | `src/cubits/approvals_cubit/` | Consulta y filtra órdenes con `isBlocked == true`, ejecuta el desbloqueo mediante `approveOrder`. |
 | **`OrderMobileCubit`** | `src/cubits/order_cubit/` | Búsqueda reactiva de órdenes y visualización de snapshots clínicos con resultados. |
 | **`CashShiftMobileCubit`** | `src/cubits/cash_shift_cubit/` | Monitor de turnos de caja en sucursales, balances esperados vs declarados. |
@@ -165,8 +178,10 @@ serum_mobile/
    - `HIGH` / `LOW`: Rojo/ámbar con flechas indicadoras (▲ / ▼).
    - `ABNORMAL`: Púrpura/ámbar destacado.
 3. **`StatusBadge` (`src/widgets/common/status_badge.dart`):** Badge de estado operativo para órdenes (`PENDING`, `IN_PROCESS`, `COMPLETED`, `CANCELLED`).
-4. **`ReasonPromptDialog` (`src/widgets/dialogs/reason_prompt_dialog.dart`):** Modal para capturar la justificación opcional de autorización de una orden bloqueada.
-5. **`ConfirmActionDialog` (`src/widgets/dialogs/confirm_action_dialog.dart`):** Diálogo universal de confirmación (aprobar, activar/desactivar).
+4. **`EmptyStateView` (`src/widgets/common/empty_state_view.dart`):** Vista universal de estado sin datos o sin coincidencias de búsqueda con icono circular, título, subtítulo y acción opcional.
+5. **`AppSearchBar` (`src/widgets/common/app_search_bar.dart`):** Barra de búsqueda con prefijo de lupa, botón de limpiar y bordes suaves.
+6. **`ReasonPromptDialog` (`src/widgets/dialogs/reason_prompt_dialog.dart`):** Modal para capturar la justificación opcional de autorización de una orden bloqueada.
+7. **`ConfirmActionDialog` (`src/widgets/dialogs/confirm_action_dialog.dart`):** Diálogo universal de confirmación (aprobar, activar/desactivar, cerrar sesión).
 
 ---
 

@@ -22,7 +22,7 @@ En el sistema de ventanilla (`serum_app_front`), cuando un recepcionista o cajer
 Una orden bloqueada:
 - No permite imprimir recibos definitivos.
 - No permite pasar la muestra a procesamiento clínico.
-- Requiere autorización formal de un supervisor (`accessLevel > 3`).
+- Requiere autorización formal de un **Administrador** (`isAdmin == true`: Root, `accessLevel >= 5`, o rol `'Admin'`/`'Administrador'`). En la app móvil, esta función y su ruta están reservadas exclusivamente para administradores.
 
 ---
 

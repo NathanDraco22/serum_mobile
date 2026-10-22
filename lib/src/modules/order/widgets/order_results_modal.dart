@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
-import 'package:serum_mobile/src/widgets/common/medical_flag_badge.dart';
+import 'package:serum_mobile/src/modules/order/widgets/order_analytic_result_item.dart';
+import 'package:serum_mobile/src/modules/order/widgets/order_patient_header_card.dart';
+import 'package:serum_mobile/src/widgets/common/empty_state_view.dart';
 import 'package:serum_mobile/src/widgets/common/status_badge.dart';
 
 class OrderResultsModal extends StatelessWidget {
@@ -36,14 +38,6 @@ class OrderResultsModal extends StatelessWidget {
     final folio = order.id.length >= 8
         ? 'FOL-${order.id.substring(0, 8).toUpperCase()}'
         : 'FOL-${order.id.toUpperCase()}';
-
-    final patientName = order.patientInfo?.name.isNotEmpty == true
-        ? order.patientInfo!.name
-        : 'Paciente sin registrar';
-
-    final doctorName = order.doctorInfo?.name.isNotEmpty == true
-        ? order.doctorInfo!.name
-        : 'Médico no especificado';
 
     return Container(
       height: size.height * 0.88,
@@ -129,70 +123,7 @@ class OrderResultsModal extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Tarjeta de Datos Demográficos
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: ColorPalette.primary.withAlpha(20),
-                                child: const Icon(
-                                  Icons.person_rounded,
-                                  color: ColorPalette.primary,
-                                  size: 22,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      patientName,
-                                      style: theme.textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Género: ${order.patientInfo?.gender == 'F' ? 'Femenino' : 'Masculino'} • Tel: ${order.patientInfo?.phone.isNotEmpty == true ? order.patientInfo!.phone : 'No registrado'}',
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: ColorPalette.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 20, color: ColorPalette.outlineVariant),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.medical_information_outlined,
-                                size: 18,
-                                color: ColorPalette.outline,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Médico: $doctorName (${order.doctorInfo?.specialty ?? 'General'})',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: ColorPalette.onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  OrderPatientHeaderCard(order: order),
                   const SizedBox(height: 18),
 
                   // Estudios Solicitados
@@ -210,8 +141,14 @@ class OrderResultsModal extends StatelessWidget {
                       return Chip(
                         label: Text(item.name),
                         backgroundColor: ColorPalette.surfaceContainerLow,
-                        side: const BorderSide(color: ColorPalette.outlineVariant, width: 0.8),
-                        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        side: const BorderSide(
+                          color: ColorPalette.outlineVariant,
+                          width: 0.8,
+                        ),
+                        labelStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       );
                     }).toList(),
                   ),
@@ -239,33 +176,11 @@ class OrderResultsModal extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   if (order.results.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: ColorPalette.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: ColorPalette.outlineVariant, width: 0.8),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.science_outlined,
-                            size: 40,
-                            color: ColorPalette.outline.withAlpha(120),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Pendiente de Procesamiento Analítico',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Las muestras aún no cuentan con resultados capturados en el banco de análisis.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12, color: ColorPalette.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
+                    const EmptyStateView(
+                      icon: Icons.science_outlined,
+                      title: 'Pendiente de Procesamiento Analítico',
+                      message:
+                          'Las muestras aún no cuentan con resultados capturados en el banco de análisis.',
                     )
                   else
                     Card(
@@ -278,69 +193,8 @@ class OrderResultsModal extends StatelessWidget {
                           color: ColorPalette.outlineVariant,
                         ),
                         itemBuilder: (context, index) {
-                          final result = order.results[index];
-                          final hasValue = result.resultValue?.isNotEmpty == true;
-
-                          String rangeText = '';
-                          if (result.referenceValues.isNotEmpty) {
-                            final ref = result.referenceValues.first;
-                            rangeText = '${ref.minValue} - ${ref.maxValue} ${result.unitOfMeasure}';
-                          }
-
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 12.0,
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 6,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        result.parameterName,
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      if (rangeText.isNotEmpty) ...[
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'Ref: $rangeText',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: ColorPalette.outline,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      hasValue
-                                          ? '${result.resultValue} ${result.unitOfMeasure}'
-                                          : 'Pendiente',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: hasValue
-                                            ? ColorPalette.onSurface
-                                            : ColorPalette.outline,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    MedicalFlagBadge(flag: result.alertFlag, compact: true),
-                                  ],
-                                ),
-                              ],
-                            ),
+                          return OrderAnalyticResultItem(
+                            result: order.results[index],
                           );
                         },
                       ),
@@ -360,7 +214,10 @@ class OrderResultsModal extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: ColorPalette.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: ColorPalette.outlineVariant, width: 0.8),
+                        border: Border.all(
+                          color: ColorPalette.outlineVariant,
+                          width: 0.8,
+                        ),
                       ),
                       child: Text(
                         order.notes!,

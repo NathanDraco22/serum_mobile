@@ -1,30 +1,45 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:serum_business/serum_business.dart';
+import 'package:serum_mobile/src/modules/activation/view/activation_screen.dart';
 
-import 'package:serum_mobile/main.dart';
+class MockServinRepository implements ServinRepository {
+  @override
+  Future<Servin> getActiveServin(
+    String apiKey,
+    String nickname, {
+    String? originServerUrl,
+  }) async {
+    return Servin(
+      name: 'Lab Test',
+      nickname: nickname,
+      url: 'http://localhost:8000',
+      isActive: true,
+    );
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('ActivationScreen renderiza correctamente los campos de enlace', (WidgetTester tester) async {
+    final mockServinRepo = MockServinRepository();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RepositoryProvider<ServinRepository>.value(
+          value: mockServinRepo,
+          child: const ActivationScreen(),
+        ),
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Activar Dispositivo'), findsOneWidget);
+    expect(find.text('Alias del Negocio'), findsOneWidget);
+    expect(find.text('Clave de Activación (API Key)'), findsOneWidget);
+    expect(find.text('Vincular y Activar'), findsOneWidget);
+    expect(find.byType(ElevatedButton), findsOneWidget);
   });
 }
