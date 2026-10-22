@@ -9,6 +9,7 @@ import '../src/modules/dashboard/view/dashboard_screen.dart';
 import '../src/modules/approvals/view/approvals_screen.dart';
 import '../src/modules/order/view/order_screen.dart';
 import '../src/modules/cash_shift/view/cash_shift_screen.dart';
+import '../src/modules/report/view/report_screen.dart';
 import '../src/modules/user/view/user_screen.dart';
 
 class GoRouterRefreshStream extends ChangeNotifier {
@@ -34,6 +35,7 @@ class AppRouter {
   static const String approvals = '/approvals';
   static const String orders = '/orders';
   static const String cashShifts = '/cash-shifts';
+  static const String reports = '/reports';
   static const String users = '/users';
 
   static GoRouter createRouter(AppSessionCubit sessionCubit) {
@@ -73,6 +75,10 @@ class AppRouter {
         GoRoute(
           path: login,
           builder: (context, state) => const LoginScreen(),
+        ),
+        GoRoute(
+          path: reports,
+          builder: (context, state) => const ReportScreen(),
         ),
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) {

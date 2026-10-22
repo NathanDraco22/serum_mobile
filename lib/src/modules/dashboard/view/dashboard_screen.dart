@@ -126,6 +126,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Reportes Financieros',
+            icon: const Icon(Icons.insights_rounded, color: ColorPalette.primary),
+            onPressed: () => context.push('/reports'),
+          ),
+          IconButton(
             tooltip: 'Cerrar Sesión',
             icon: const Icon(Icons.logout_rounded, color: ColorPalette.outline),
             onPressed: () {
@@ -333,6 +338,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: () => context.push('/reports'),
+                      icon: const Icon(Icons.insights_rounded, size: 20),
+                      label: const Text('Ver Reportes y Analítica Ejecutiva'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: ColorPalette.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
                         Expanded(
