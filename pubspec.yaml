@@ -39,9 +39,23 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  icons_launcher: ^3.1.0
+
+icons_launcher:
+  image_path: "assets/icon/serum_app_icon.png"
+  platforms:
+    android:
+      enable: true
+      adaptive_background_color: "#ffffff"
+      adaptive_foreground_image: "assets/icon/serum_app_icon.png"
+    ios:
+      enable: true
+    web:
+      enable: true
+      image_path: "assets/icon/serum_app_desktop.png"
 
 flutter:
   uses-material-design: true
 
-  # assets:
-  #   - assets/images/
+  assets:
+    - assets/icon/

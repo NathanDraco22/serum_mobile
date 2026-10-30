@@ -144,7 +144,9 @@ class _ApprovalsView extends StatelessWidget {
                   child: ApprovalOrderCard(
                     order: order,
                     isApproving: state.approvingOrderId == order.id,
+                    isRejecting: state.rejectingOrderId == order.id,
                     onApprove: (reason) => cubit.approveOrder(order.id, reason: reason),
+                    onReject: () => cubit.rejectOrder(order.id),
                   ),
                 );
               },

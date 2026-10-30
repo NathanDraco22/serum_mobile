@@ -172,6 +172,35 @@ class OrderCard extends StatelessWidget {
                   // Monto y estado de cobro
                   Row(
                     children: [
+                      if (order.discounts.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: ColorPalette.warning.withAlpha(25),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.local_offer_rounded,
+                                size: 10,
+                                color: Color(0xFF78350F),
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                '-${_formatCents(order.totalDiscounts)}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF78350F),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
                       Text(
                         _formatCents(order.totalPrice),
                         style: theme.textTheme.titleSmall?.copyWith(

@@ -5,6 +5,7 @@ enum ApprovalsStatus {
   loading,
   success,
   approving,
+  rejecting,
   failure,
 }
 
@@ -12,6 +13,7 @@ class ApprovalsState {
   final ApprovalsStatus status;
   final List<OrderInDb> blockedOrders;
   final String? approvingOrderId;
+  final String? rejectingOrderId;
   final String? errorMessage;
   final String? successMessage;
 
@@ -19,6 +21,7 @@ class ApprovalsState {
     this.status = ApprovalsStatus.initial,
     this.blockedOrders = const [],
     this.approvingOrderId,
+    this.rejectingOrderId,
     this.errorMessage,
     this.successMessage,
   });
@@ -27,9 +30,11 @@ class ApprovalsState {
     ApprovalsStatus? status,
     List<OrderInDb>? blockedOrders,
     String? approvingOrderId,
+    String? rejectingOrderId,
     String? errorMessage,
     String? successMessage,
     bool clearApprovingId = false,
+    bool clearRejectingId = false,
     bool clearError = false,
     bool clearSuccess = false,
   }) {
@@ -38,6 +43,8 @@ class ApprovalsState {
       blockedOrders: blockedOrders ?? this.blockedOrders,
       approvingOrderId:
           clearApprovingId ? null : (approvingOrderId ?? this.approvingOrderId),
+      rejectingOrderId:
+          clearRejectingId ? null : (rejectingOrderId ?? this.rejectingOrderId),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       successMessage:
           clearSuccess ? null : (successMessage ?? this.successMessage),

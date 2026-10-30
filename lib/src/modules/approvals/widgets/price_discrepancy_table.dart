@@ -6,10 +6,10 @@ import 'package:serum_mobile/config/app_theme.dart';
 class PriceDiscrepancyTable extends StatelessWidget {
   const PriceDiscrepancyTable({
     super.key,
-    required this.items,
+    required this.order,
   });
 
-  final List<OrderItem> items;
+  final OrderInDb order;
 
   String _formatCents(int cents) {
     final amount = cents / 100.0;
@@ -22,22 +22,37 @@ class PriceDiscrepancyTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final items = order.items;
+    final services = order.services;
+    final discounts = order.discounts;
 
     // Cálculos consolidados en centavos
     final totalOriginalCents = items.fold<int>(
       0,
-      (sum, item) => sum + (item.originalPrice > 0 ? item.originalPrice : item.salePriceApplied),
+      (sum, item) =>
+          sum + (item.originalPrice > 0 ? item.originalPrice : item.salePriceApplied),
     );
 
-    final totalAppliedCents = items.fold<int>(
+    final totalAppliedItemsCents = items.fold<int>(
       0,
       (sum, item) => sum + item.salePriceApplied,
     );
 
-    final totalDiffCents = totalOriginalCents - totalAppliedCents;
-    final discountPercent = totalOriginalCents > 0
-        ? ((totalDiffCents / totalOriginalCents) * 100).round()
-        : 0;
+    final totalServicesCents = services.fold<int>(
+      0,
+      (sum, service) => sum + service.price,
+    );
+
+    final itemsDiffCents = totalOriginalCents - totalAppliedItemsCents;
+    final grossTotal = totalAppliedItemsCents + totalServicesCents;
+    final orderDiscountsCents = order.totalDiscounts;
+    final totalConsolidatedDiscounts = itemsDiffCents + orderDiscountsCents;
+
+    final totalFinalCents = order.totalPrice > 0
+        ? order.totalPrice
+        : ((grossTotal - orderDiscountsCents) > 0
+            ? (grossTotal - orderDiscountsCents)
+            : 0);
 
     return Container(
       decoration: BoxDecoration(
@@ -46,8 +61,9 @@ class PriceDiscrepancyTable extends StatelessWidget {
         border: Border.all(color: ColorPalette.outlineVariant, width: 0.8),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Cabecera de columnas
+          // Cabecera de columnas para estudios
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
             child: Row(
@@ -101,7 +117,8 @@ class PriceDiscrepancyTable extends StatelessWidget {
             ),
             itemBuilder: (context, index) {
               final item = items[index];
-              final original = item.originalPrice > 0 ? item.originalPrice : item.salePriceApplied;
+              final original =
+                  item.originalPrice > 0 ? item.originalPrice : item.salePriceApplied;
               final applied = item.salePriceApplied;
               final hasDiscount = applied < original;
 
@@ -147,51 +164,205 @@ class PriceDiscrepancyTable extends StatelessWidget {
               );
             },
           ),
+
+          // Sección de Servicios Adicionales si existen
+          if (services.isNotEmpty) ...[
+            const Divider(height: 1, thickness: 0.8, color: ColorPalette.outlineVariant),
+            Container(
+              color: ColorPalette.surfaceContainerLowest,
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.miscellaneous_services_rounded, size: 14, color: ColorPalette.outline),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Servicios Adicionales (${services.length})',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: ColorPalette.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ...services.map((service) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          service.name,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      Text(
+                        _formatCents(service.price),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+
+          // Sección de Descuentos Aplicados en la Orden
+          if (discounts.isNotEmpty) ...[
+            const Divider(height: 1, thickness: 0.8, color: ColorPalette.outlineVariant),
+            Container(
+              color: ColorPalette.warningContainer.withAlpha(50),
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.local_offer_rounded, size: 14, color: ColorPalette.warning),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Descuentos en la Orden (${discounts.length})',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF78350F),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ...discounts.map((discount) {
+              final badgeLabel = discount.isPercentage
+                  ? '${discount.value.toStringAsFixed(discount.value.truncateToDouble() == discount.value ? 0 : 1)}%'
+                  : '\$${(discount.value).toStringAsFixed(2)}';
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: ColorPalette.warning.withAlpha(30),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              badgeLabel,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF78350F),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              discount.description.isNotEmpty
+                                  ? discount.description
+                                  : 'Descuento general',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '- ${_formatCents(discount.appliedAmount)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: ColorPalette.error,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+
           const Divider(height: 1, thickness: 0.8, color: ColorPalette.outlineVariant),
 
           // Fila de Totales y Descuento Consolidado
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Descuento Concedido:',
-                      style: TextStyle(fontSize: 12, color: ColorPalette.onSurfaceVariant),
-                    ),
-                    if (totalDiffCents > 0)
-                      Container(
-                        margin: const EdgeInsets.only(top: 2),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: ColorPalette.warning.withAlpha(25),
-                          borderRadius: BorderRadius.circular(6),
+                if (totalConsolidatedDiscounts > 0 || services.isNotEmpty) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Subtotal Bruto:',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: ColorPalette.onSurfaceVariant,
                         ),
-                        child: Text(
-                          '-${_formatCents(totalDiffCents)} (-$discountPercent%)',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: ColorPalette.warning,
+                      ),
+                      Text(
+                        _formatCents(grossTotal + itemsDiffCents),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Descuentos Concedidos:',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: ColorPalette.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '- ${_formatCents(totalConsolidatedDiscounts)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: ColorPalette.error,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 12, thickness: 0.5, color: ColorPalette.outlineVariant),
+                ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Total a Cobrar:',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: ColorPalette.onSurfaceVariant,
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Total a Cobrar:',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: ColorPalette.onSurfaceVariant,
-                      ),
+                        if (totalConsolidatedDiscounts > 0)
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: ColorPalette.warning.withAlpha(25),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Ahorro: -${_formatCents(totalConsolidatedDiscounts)}',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: ColorPalette.warning,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     Text(
-                      _formatCents(totalAppliedCents),
+                      _formatCents(totalFinalCents),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: ColorPalette.primary,

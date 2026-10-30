@@ -30,6 +30,14 @@ class OrderResultsModal extends StatelessWidget {
     return DateFormat('dd/MM/yyyy • hh:mm a').format(date);
   }
 
+  String _formatCents(int cents) {
+    final amount = cents / 100.0;
+    return NumberFormat.currency(
+      symbol: '\$',
+      decimalDigits: 2,
+    ).format(amount);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -199,6 +207,108 @@ class OrderResultsModal extends StatelessWidget {
                         },
                       ),
                     ),
+
+                  if (order.discounts.isNotEmpty || order.services.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      'Resumen Financiero',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: ColorPalette.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: ColorPalette.outlineVariant,
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Subtotal Bruto:',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: ColorPalette.onSurfaceVariant,
+                                ),
+                              ),
+                              Text(
+                                _formatCents(order.grossTotal),
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                          if (order.services.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            ...order.services.map((s) => Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Servicio: ${s.name}',
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                    Text(
+                                      _formatCents(s.price),
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                )),
+                          ],
+                          if (order.discounts.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            ...order.discounts.map((d) => Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Descuento (${d.description.isNotEmpty ? d.description : (d.isPercentage ? "${d.value}%" : "\$${d.value}")}):',
+                                        style: const TextStyle(
+                                          color: ColorPalette.error,
+                                          fontSize: 12,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Text(
+                                      '- ${_formatCents(d.appliedAmount)}',
+                                      style: const TextStyle(
+                                        color: ColorPalette.error,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                )),
+                          ],
+                          const Divider(height: 12, thickness: 0.5, color: ColorPalette.outlineVariant),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Total Orden:',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              Text(
+                                _formatCents(order.totalPrice),
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: ColorPalette.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
 
                   if (order.notes?.isNotEmpty == true) ...[
                     const SizedBox(height: 20),

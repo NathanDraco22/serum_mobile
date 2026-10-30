@@ -104,4 +104,47 @@ class ApprovalsCubit extends Cubit<ApprovalsState> {
       return false;
     }
   }
+
+  /// Rechaza y descarta la orden retenida con confirmación del supervisor
+  Future<bool> rejectOrder(String orderId, {String? reason}) async {
+    final user = appSessionCubit.currentUser;
+    if (user == null) {
+      emit(state.copyWith(
+        status: ApprovalsStatus.failure,
+        errorMessage: 'Sesión no disponible para rechazar la orden.',
+      ));
+      return false;
+    }
+
+    emit(state.copyWith(
+      status: ApprovalsStatus.rejecting,
+      rejectingOrderId: orderId,
+      clearError: true,
+      clearSuccess: true,
+    ));
+
+    try {
+      await ordersRepository.deleteOrderById(orderId);
+
+      // Eliminar de la lista local de inmediato para respuesta táctil instantánea
+      final updatedList =
+          state.blockedOrders.where((order) => order.id != orderId).toList();
+
+      emit(state.copyWith(
+        status: ApprovalsStatus.success,
+        blockedOrders: updatedList,
+        clearRejectingId: true,
+        successMessage: 'Orden rechazada y descartada del sistema.',
+      ));
+
+      return true;
+    } catch (e) {
+      emit(state.copyWith(
+        status: ApprovalsStatus.failure,
+        clearRejectingId: true,
+        errorMessage: 'No se pudo rechazar la orden: $e',
+      ));
+      return false;
+    }
+  }
 }
