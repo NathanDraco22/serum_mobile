@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
 import 'package:serum_mobile/src/modules/order/widgets/order_results_modal.dart';
+import 'package:serum_mobile/src/tools/formatters/currency_formatter.dart';
+import 'package:serum_mobile/src/tools/formatters/date_formatter.dart';
+import 'package:serum_mobile/src/tools/formatters/folio_formatter.dart';
 import 'package:serum_mobile/src/widgets/common/status_badge.dart';
 
 class OrderCard extends StatelessWidget {
@@ -13,27 +15,11 @@ class OrderCard extends StatelessWidget {
 
   final OrderInDb order;
 
-  String _formatCents(int cents) {
-    final amount = cents / 100.0;
-    return NumberFormat.currency(
-      symbol: '\$',
-      decimalDigits: 2,
-    ).format(amount);
-  }
-
-  String _formatDate(int timestamp) {
-    if (timestamp <= 0) return 'Fecha no disponible';
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    return DateFormat('dd/MM/yyyy • hh:mm a').format(date);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final folio = order.id.length >= 8
-        ? 'FOL-${order.id.substring(0, 8).toUpperCase()}'
-        : 'FOL-${order.id.toUpperCase()}';
+    final folio = formatOrderFolio(order.id);
 
     final patientName = order.patientInfo?.name.isNotEmpty == true
         ? order.patientInfo!.name
@@ -114,7 +100,7 @@ class OrderCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    _formatDate(order.createdAt),
+                    formatTimestampToDateTime(order.createdAt),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: ColorPalette.outline,
                       fontSize: 12,
@@ -189,7 +175,7 @@ class OrderCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 3),
                               Text(
-                                '-${_formatCents(order.totalDiscounts)}',
+                                '-${formatCentsToCurrency(order.totalDiscounts)}',
                                 style: const TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
@@ -202,7 +188,7 @@ class OrderCard extends StatelessWidget {
                         const SizedBox(width: 6),
                       ],
                       Text(
-                        _formatCents(order.totalPrice),
+                        formatCentsToCurrency(order.totalPrice),
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),

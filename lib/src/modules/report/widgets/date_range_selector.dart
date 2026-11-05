@@ -95,8 +95,11 @@ class DateRangeSelector extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               Text(
                 'Periodo de Análisis',
@@ -114,11 +117,15 @@ class DateRangeSelector extends StatelessWidget {
                     color: ColorPalette.onSurfaceVariant,
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    _formatDateRange(),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: ColorPalette.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      _formatDateRange(),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: ColorPalette.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

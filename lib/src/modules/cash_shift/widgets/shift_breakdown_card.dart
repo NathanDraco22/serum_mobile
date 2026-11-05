@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
 import 'package:serum_mobile/src/modules/cash_shift/widgets/discrepancy_badge.dart';
+import 'package:serum_mobile/src/tools/formatters/currency_formatter.dart';
+import 'package:serum_mobile/src/tools/formatters/date_formatter.dart';
 
 class ShiftBreakdownCard extends StatelessWidget {
   const ShiftBreakdownCard({
@@ -11,20 +12,6 @@ class ShiftBreakdownCard extends StatelessWidget {
   });
 
   final CashShiftInDb shift;
-
-  String _formatCents(int cents) {
-    final amount = cents / 100.0;
-    return NumberFormat.currency(
-      symbol: '\$',
-      decimalDigits: 2,
-    ).format(amount);
-  }
-
-  String _formatDate(int timestamp) {
-    if (timestamp <= 0) return 'Fecha no disponible';
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    return DateFormat('dd/MM/yyyy • hh:mm a').format(date);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +102,7 @@ class ShiftBreakdownCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Apertura: ${_formatDate(shift.openedAt)}',
+                  'Apertura: ${formatTimestampToDateTime(shift.openedAt)}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: ColorPalette.outline,
                     fontSize: 12,
@@ -134,7 +121,7 @@ class ShiftBreakdownCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Cierre: ${_formatDate(shift.closedAt!)}',
+                    'Cierre: ${formatTimestampToDateTime(shift.closedAt!)}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: ColorPalette.outline,
                       fontSize: 12,
@@ -161,7 +148,7 @@ class ShiftBreakdownCard extends StatelessWidget {
                       Expanded(
                         child: _buildMetricItem(
                           label: 'Fondo Inicial',
-                          value: _formatCents(shift.initialBalance),
+                          value: formatCentsToCurrency(shift.initialBalance),
                           icon: Icons.savings_outlined,
                           color: ColorPalette.secondary,
                         ),
@@ -170,7 +157,7 @@ class ShiftBreakdownCard extends StatelessWidget {
                       Expanded(
                         child: _buildMetricItem(
                           label: 'Efectivo en Caja',
-                          value: _formatCents(shift.cashBalance),
+                          value: formatCentsToCurrency(shift.cashBalance),
                           icon: Icons.payments_outlined,
                           color: ColorPalette.primary,
                         ),
@@ -185,7 +172,7 @@ class ShiftBreakdownCard extends StatelessWidget {
                       Expanded(
                         child: _buildMetricItem(
                           label: 'Tarjeta / TPV',
-                          value: _formatCents(shift.cardBalance),
+                          value: formatCentsToCurrency(shift.cardBalance),
                           icon: Icons.credit_card_rounded,
                           color: ColorPalette.tertiary,
                         ),
@@ -194,7 +181,7 @@ class ShiftBreakdownCard extends StatelessWidget {
                       Expanded(
                         child: _buildMetricItem(
                           label: 'Transferencia',
-                          value: _formatCents(shift.transferBalance),
+                          value: formatCentsToCurrency(shift.transferBalance),
                           icon: Icons.account_balance_rounded,
                           color: const Color(0xFF0284C7),
                         ),
@@ -227,7 +214,7 @@ class ShiftBreakdownCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        _formatCents(shift.totalBalance),
+                        formatCentsToCurrency(shift.totalBalance),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: ColorPalette.primary,
@@ -245,7 +232,7 @@ class ShiftBreakdownCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        _formatCents(isOpen ? totalCashExpected : (shift.declaredCash ?? 0)),
+                        formatCentsToCurrency(isOpen ? totalCashExpected : (shift.declaredCash ?? 0)),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: isOpen

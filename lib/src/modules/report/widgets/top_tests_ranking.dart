@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
+import 'package:serum_mobile/src/tools/formatters/currency_formatter.dart';
 
 class TopTestsRanking extends StatelessWidget {
   final List<LabTestVolumeItem> tests;
@@ -11,14 +11,6 @@ class TopTestsRanking extends StatelessWidget {
     super.key,
     required this.tests,
   });
-
-  String _formatCents(int cents) {
-    final amount = cents / 100.0;
-    return NumberFormat.currency(
-      symbol: '\$',
-      decimalDigits: 2,
-    ).format(amount);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +156,7 @@ class TopTestsRanking extends StatelessWidget {
                       ],
                       const SizedBox(width: 8),
                       Text(
-                        _formatCents(item.totalRevenue),
+                        formatCentsToCurrency(item.totalRevenue),
                         style: theme.textTheme.labelMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: ColorPalette.primary,

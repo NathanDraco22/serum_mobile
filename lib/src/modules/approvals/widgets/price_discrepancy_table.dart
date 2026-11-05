@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
+import 'package:serum_mobile/src/tools/formatters/currency_formatter.dart';
 
 class PriceDiscrepancyTable extends StatelessWidget {
   const PriceDiscrepancyTable({
@@ -10,14 +10,6 @@ class PriceDiscrepancyTable extends StatelessWidget {
   });
 
   final OrderInDb order;
-
-  String _formatCents(int cents) {
-    final amount = cents / 100.0;
-    return NumberFormat.currency(
-      symbol: '\$',
-      decimalDigits: 2,
-    ).format(amount);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +130,7 @@ class PriceDiscrepancyTable extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: Text(
-                        _formatCents(original),
+                        formatCentsToCurrency(original),
                         textAlign: TextAlign.right,
                         style: TextStyle(
                           fontSize: 12,
@@ -150,7 +142,7 @@ class PriceDiscrepancyTable extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: Text(
-                        _formatCents(applied),
+                        formatCentsToCurrency(applied),
                         textAlign: TextAlign.right,
                         style: TextStyle(
                           fontSize: 13,
@@ -197,7 +189,7 @@ class PriceDiscrepancyTable extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        _formatCents(service.price),
+                        formatCentsToCurrency(service.price),
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ],
@@ -270,7 +262,7 @@ class PriceDiscrepancyTable extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '- ${_formatCents(discount.appliedAmount)}',
+                      '- ${formatCentsToCurrency(discount.appliedAmount)}',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -301,7 +293,7 @@ class PriceDiscrepancyTable extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        _formatCents(grossTotal + itemsDiffCents),
+                        formatCentsToCurrency(grossTotal + itemsDiffCents),
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -320,7 +312,7 @@ class PriceDiscrepancyTable extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '- ${_formatCents(totalConsolidatedDiscounts)}',
+                        '- ${formatCentsToCurrency(totalConsolidatedDiscounts)}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: ColorPalette.error,
                           fontWeight: FontWeight.w700,
@@ -351,7 +343,7 @@ class PriceDiscrepancyTable extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              'Ahorro: -${_formatCents(totalConsolidatedDiscounts)}',
+                              'Ahorro: -${formatCentsToCurrency(totalConsolidatedDiscounts)}',
                               style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -362,7 +354,7 @@ class PriceDiscrepancyTable extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      _formatCents(totalFinalCents),
+                      formatCentsToCurrency(totalFinalCents),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: ColorPalette.primary,

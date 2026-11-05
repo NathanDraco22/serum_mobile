@@ -11,7 +11,7 @@ class ActivationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final servinRepo = context.read<ServinRepository>();
+    final servinRepo = RepositoryProvider.of<ServinRepository>(context);
     return BlocProvider(
       create: (context) => ActivationCubit(servinRepo),
       child: const _RootScaffold(),

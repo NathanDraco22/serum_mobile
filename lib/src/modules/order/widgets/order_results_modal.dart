@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
 import 'package:serum_mobile/src/modules/order/widgets/order_analytic_result_item.dart';
 import 'package:serum_mobile/src/modules/order/widgets/order_patient_header_card.dart';
+import 'package:serum_mobile/src/tools/formatters/currency_formatter.dart';
+import 'package:serum_mobile/src/tools/formatters/date_formatter.dart';
+import 'package:serum_mobile/src/tools/formatters/folio_formatter.dart';
 import 'package:serum_mobile/src/widgets/common/empty_state_view.dart';
 import 'package:serum_mobile/src/widgets/common/status_badge.dart';
 
@@ -24,28 +26,12 @@ class OrderResultsModal extends StatelessWidget {
     );
   }
 
-  String _formatDate(int timestamp) {
-    if (timestamp <= 0) return 'Fecha no disponible';
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    return DateFormat('dd/MM/yyyy • hh:mm a').format(date);
-  }
-
-  String _formatCents(int cents) {
-    final amount = cents / 100.0;
-    return NumberFormat.currency(
-      symbol: '\$',
-      decimalDigits: 2,
-    ).format(amount);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
 
-    final folio = order.id.length >= 8
-        ? 'FOL-${order.id.substring(0, 8).toUpperCase()}'
-        : 'FOL-${order.id.toUpperCase()}';
+    final folio = formatOrderFolio(order.id);
 
     return Container(
       height: size.height * 0.88,
@@ -108,7 +94,7 @@ class OrderResultsModal extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _formatDate(order.createdAt),
+                      formatTimestampToDateTime(order.createdAt),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: ColorPalette.outline,
                       ),
@@ -239,7 +225,7 @@ class OrderResultsModal extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                _formatCents(order.grossTotal),
+                                formatCentsToCurrency(order.grossTotal),
                                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                               ),
                             ],
@@ -256,7 +242,7 @@ class OrderResultsModal extends StatelessWidget {
                                       ),
                                     ),
                                     Text(
-                                      _formatCents(s.price),
+                                      formatCentsToCurrency(s.price),
                                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                                     ),
                                   ],
@@ -278,7 +264,7 @@ class OrderResultsModal extends StatelessWidget {
                                       ),
                                     ),
                                     Text(
-                                      '- ${_formatCents(d.appliedAmount)}',
+                                      '- ${formatCentsToCurrency(d.appliedAmount)}',
                                       style: const TextStyle(
                                         color: ColorPalette.error,
                                         fontWeight: FontWeight.w700,
@@ -297,7 +283,7 @@ class OrderResultsModal extends StatelessWidget {
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                               ),
                               Text(
-                                _formatCents(order.totalPrice),
+                                formatCentsToCurrency(order.totalPrice),
                                 style: theme.textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.w800,
                                   color: ColorPalette.primary,

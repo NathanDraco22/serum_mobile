@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:serum_business/serum_business.dart';
+import 'package:serum_mobile/config/app_router.dart';
 import 'package:serum_mobile/config/app_theme.dart';
 import 'package:serum_mobile/src/cubits/user_cubit/user_mobile_cubit.dart';
 import 'package:serum_mobile/src/cubits/user_cubit/user_mobile_state.dart';
@@ -16,9 +18,9 @@ class UserScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => UserMobileCubit(
-        usersRepository: context.read<UsersRepository>(),
-        rolesRepository: context.read<RolesRepository>(),
-        branchesRepository: context.read<BranchesRepository>(),
+        usersRepository: RepositoryProvider.of<UsersRepository>(context),
+        rolesRepository: RepositoryProvider.of<RolesRepository>(context),
+        branchesRepository: RepositoryProvider.of<BranchesRepository>(context),
       ),
       child: const _UserView(),
     );
@@ -84,6 +86,17 @@ class _UserViewState extends State<_UserView> {
         return Scaffold(
           backgroundColor: ColorPalette.surface,
           appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              tooltip: 'Regresar',
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(AppRouter.admin);
+                }
+              },
+            ),
             title: Text(
               'Directorio de Personal',
               style: theme.textTheme.titleMedium?.copyWith(
@@ -183,20 +196,33 @@ class _UserViewState extends State<_UserView> {
                 // Lista de Colaboradores
                 Expanded(
                   child: state.isLoading && state.users.isEmpty
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const SingleChildScrollView(
+                          physics: AlwaysScrollableScrollPhysics(),
+                          child: SizedBox(
+                            height: 300,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        )
                       : filteredUsers.isEmpty
-                          ? EmptyStateView(
-                              icon: Icons.person_search_rounded,
-                              title: state.searchQuery.isNotEmpty ||
-                                      state.selectedRoleFilter != null
-                                  ? 'No se encontraron colaboradores'
-                                  : 'No hay usuarios registrados',
-                              message: state.searchQuery.isNotEmpty ||
-                                      state.selectedRoleFilter != null
-                                  ? 'Intenta con otros términos o limpia los filtros.'
-                                  : 'Utiliza el botón flotante para crear el primer colaborador.',
+                          ? SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: SizedBox(
+                                height: MediaQuery.of(context).size.height * 0.5,
+                                child: EmptyStateView(
+                                  icon: Icons.person_search_rounded,
+                                  title: state.searchQuery.isNotEmpty ||
+                                          state.selectedRoleFilter != null
+                                      ? 'No se encontraron colaboradores'
+                                      : 'No hay usuarios registrados',
+                                  message: state.searchQuery.isNotEmpty ||
+                                          state.selectedRoleFilter != null
+                                      ? 'Intenta con otros términos o limpia los filtros.'
+                                      : 'Utiliza el botón flotante para crear el primer colaborador.',
+                                ),
+                              ),
                             )
                           : ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
                               padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
                               itemCount: filteredUsers.length,
                               separatorBuilder: (context, index) =>

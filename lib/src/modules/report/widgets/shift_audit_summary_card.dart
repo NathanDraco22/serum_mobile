@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
+import 'package:serum_mobile/src/tools/formatters/currency_formatter.dart';
 
 class ShiftAuditSummaryCard extends StatelessWidget {
   final ShiftsAuditReportResponse shiftsReport;
@@ -10,17 +10,6 @@ class ShiftAuditSummaryCard extends StatelessWidget {
     super.key,
     required this.shiftsReport,
   });
-
-  String _formatCents(int cents) {
-    final amount = cents.abs() / 100.0;
-    final formatted = NumberFormat.currency(
-      symbol: '\$',
-      decimalDigits: 2,
-    ).format(amount);
-    if (cents < 0) return '-$formatted';
-    if (cents > 0) return '+$formatted';
-    return formatted;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +114,7 @@ class ShiftAuditSummaryCard extends StatelessWidget {
               Expanded(
                 child: _AuditMetricTile(
                   label: 'Diferencia Neta',
-                  value: _formatCents(diff),
+                  value: formatCentsSigned(diff),
                   icon: Icons.difference_rounded,
                   color: badgeColor,
                 ),

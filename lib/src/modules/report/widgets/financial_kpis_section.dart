@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
+import 'package:serum_mobile/src/tools/formatters/currency_formatter.dart';
 
 class FinancialKpisSection extends StatelessWidget {
   final FinancialSummaryReport summary;
@@ -10,14 +10,6 @@ class FinancialKpisSection extends StatelessWidget {
     super.key,
     required this.summary,
   });
-
-  String _formatCents(int cents) {
-    final amount = cents / 100.0;
-    return NumberFormat.currency(
-      symbol: '\$',
-      decimalDigits: 2,
-    ).format(amount);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +30,7 @@ class FinancialKpisSection extends StatelessWidget {
             Expanded(
               child: _FinancialCard(
                 title: 'Total Facturado',
-                value: _formatCents(summary.totalBilled),
+                value: formatCentsToCurrency(summary.totalBilled),
                 subtitle: '${summary.ordersCount} órdenes',
                 icon: Icons.receipt_long_rounded,
                 color: ColorPalette.primary,
@@ -48,7 +40,7 @@ class FinancialKpisSection extends StatelessWidget {
             Expanded(
               child: _FinancialCard(
                 title: 'Total Recaudado',
-                value: _formatCents(summary.totalCollected),
+                value: formatCentsToCurrency(summary.totalCollected),
                 subtitle: '${summary.transactionsCount} pagos',
                 icon: Icons.payments_rounded,
                 color: ColorPalette.success,
@@ -59,7 +51,7 @@ class FinancialKpisSection extends StatelessWidget {
         const SizedBox(height: 12),
         _PendingReceivablesBanner(
           pendingCents: summary.pendingReceivables,
-          formattedAmount: _formatCents(summary.pendingReceivables),
+          formattedAmount: formatCentsToCurrency(summary.pendingReceivables),
         ),
       ],
     );

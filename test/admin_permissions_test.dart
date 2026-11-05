@@ -38,6 +38,7 @@ class FakeRolesRepo extends Fake implements RolesRepository {
   @override
   Stream<RepoEvent<RoleInDb>> get eventStream => const Stream.empty();
 }
+class FakeReportsRepo extends Fake implements ReportsRepository {}
 
 class FakeAppSessionCubit extends Cubit<AppSessionState> implements AppSessionCubit {
   FakeAppSessionCubit(super.initialState);
@@ -139,6 +140,7 @@ void main() {
             RepositoryProvider<UsersRepository>(create: (_) => FakeUsersRepo()),
             RepositoryProvider<RolesRepository>(create: (_) => FakeRolesRepo()),
             RepositoryProvider<BranchesRepository>(create: (_) => FakeBranchesRepo()),
+            RepositoryProvider<ReportsRepository>(create: (_) => FakeReportsRepo()),
           ],
           child: BlocProvider<AppSessionCubit>.value(
             value: fakeCubit,
@@ -177,6 +179,7 @@ void main() {
             RepositoryProvider<UsersRepository>(create: (_) => FakeUsersRepo()),
             RepositoryProvider<RolesRepository>(create: (_) => FakeRolesRepo()),
             RepositoryProvider<BranchesRepository>(create: (_) => FakeBranchesRepo()),
+            RepositoryProvider<ReportsRepository>(create: (_) => FakeReportsRepo()),
           ],
           child: BlocProvider<AppSessionCubit>.value(
             value: fakeCubit,
@@ -193,7 +196,7 @@ void main() {
       expect(find.byType(ApprovalsScreen), findsOneWidget);
     });
 
-    testWidgets('ShellScreen muestra 3 destinos para supervisor regular y 5 para admin', (tester) async {
+    testWidgets('ShellScreen muestra 3 destinos para supervisor regular y 4 para admin (con pestaña Administración)', (tester) async {
       // 1. Caso Supervisor regular: solo 3 destinos
       final supervisorCubit = FakeAppSessionCubit(
         AppSessionState(
@@ -215,6 +218,7 @@ void main() {
             RepositoryProvider<UsersRepository>(create: (_) => FakeUsersRepo()),
             RepositoryProvider<RolesRepository>(create: (_) => FakeRolesRepo()),
             RepositoryProvider<BranchesRepository>(create: (_) => FakeBranchesRepo()),
+            RepositoryProvider<ReportsRepository>(create: (_) => FakeReportsRepo()),
           ],
           child: BlocProvider<AppSessionCubit>.value(
             value: supervisorCubit,
@@ -232,10 +236,9 @@ void main() {
       expect(find.text('Inicio'), findsOneWidget);
       expect(find.text('Órdenes'), findsOneWidget);
       expect(find.text('Cajas'), findsOneWidget);
-      expect(find.text('Aprobaciones'), findsNothing);
-      expect(find.text('Usuarios'), findsNothing);
+      expect(find.text('Administración'), findsNothing);
 
-      // 2. Caso Admin: 5 destinos
+      // 2. Caso Admin: 4 destinos (Inicio, Órdenes, Cajas, Administración)
       final adminCubit = FakeAppSessionCubit(
         AppSessionState(
           status: AppSessionStatus.authenticated,
@@ -256,6 +259,7 @@ void main() {
             RepositoryProvider<UsersRepository>(create: (_) => FakeUsersRepo()),
             RepositoryProvider<RolesRepository>(create: (_) => FakeRolesRepo()),
             RepositoryProvider<BranchesRepository>(create: (_) => FakeBranchesRepo()),
+            RepositoryProvider<ReportsRepository>(create: (_) => FakeReportsRepo()),
           ],
           child: BlocProvider<AppSessionCubit>.value(
             value: adminCubit,
@@ -269,12 +273,13 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
 
       final navBarAdmin = tester.widget<NavigationBar>(find.byType(NavigationBar));
-      expect(navBarAdmin.destinations.length, equals(5));
+      expect(navBarAdmin.destinations.length, equals(4));
       expect(find.text('Inicio'), findsOneWidget);
-      expect(find.text('Aprobaciones'), findsOneWidget);
       expect(find.text('Órdenes'), findsOneWidget);
       expect(find.text('Cajas'), findsOneWidget);
-      expect(find.text('Usuarios'), findsOneWidget);
+      expect(find.text('Administración'), findsOneWidget);
+      expect(find.text('Aprobaciones'), findsNothing);
+      expect(find.text('Usuarios'), findsNothing);
     });
 
     testWidgets('DashboardScreen oculta el banner de aprobaciones y la tarjeta Por Autorizar para no-admins', (tester) async {

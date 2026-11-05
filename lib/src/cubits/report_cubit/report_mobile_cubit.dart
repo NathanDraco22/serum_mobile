@@ -5,19 +5,28 @@ import 'package:serum_mobile/src/cubits/report_cubit/report_mobile_state.dart';
 
 class ReportMobileCubit extends Cubit<ReportMobileState> {
   final ReportsRepository reportsRepository;
-  String? _currentBranchId;
 
   ReportMobileCubit({
     required this.reportsRepository,
     String? initialBranchId,
-  })  : _currentBranchId = initialBranchId,
-        super(const ReportMobileState()) {
+  }) : super(ReportMobileState(branchId: initialBranchId)) {
     initDefaultPeriod();
   }
 
   void updateBranchFilter(String? branchId) {
-    _currentBranchId = branchId;
+    emit(state.copyWith(
+      branchId: branchId,
+      clearBranchId: branchId == null,
+    ));
     loadReports();
+  }
+
+  void changeTab(ReportMobileTab tab) {
+    if (state.activeTab == tab) return;
+    emit(state.copyWith(activeTab: tab));
+    if (!state.hasDataForActiveTab) {
+      loadReports();
+    }
   }
 
   void initDefaultPeriod() {
@@ -97,18 +106,29 @@ class ReportMobileCubit extends Cubit<ReportMobileState> {
         reportsRepository.getFinancialReport(
           startDate: state.startDate,
           endDate: state.endDate,
-          branchId: _currentBranchId,
+          branchId: state.branchId,
         ),
         reportsRepository.getLabTestsVolumeReport(
           startDate: state.startDate,
           endDate: state.endDate,
-          branchId: _currentBranchId,
+          branchId: state.branchId,
           limit: 10,
         ),
         reportsRepository.getShiftsAuditReport(
           startDate: state.startDate,
           endDate: state.endDate,
-          branchId: _currentBranchId,
+          branchId: state.branchId,
+        ),
+        reportsRepository.getTopDoctorsReport(
+          startDate: state.startDate,
+          endDate: state.endDate,
+          branchId: state.branchId,
+          limit: 10,
+        ),
+        reportsRepository.getPendingBalancesReport(
+          startDate: state.startDate,
+          endDate: state.endDate,
+          branchId: state.branchId,
         ),
       ]);
 
@@ -117,6 +137,8 @@ class ReportMobileCubit extends Cubit<ReportMobileState> {
         financialReport: results[0] as FinancialReportResponse,
         volumeReport: results[1] as LabTestsVolumeReportResponse,
         shiftsReport: results[2] as ShiftsAuditReportResponse,
+        topDoctorsReport: results[3] as TopDoctorsReportResponse,
+        pendingBalancesReport: results[4] as PendingBalancesReportResponse,
       ));
     } catch (e, stack) {
       debugPrint('[ReportMobileCubit] Error al cargar reportes: $e\n$stack');

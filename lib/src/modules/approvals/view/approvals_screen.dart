@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:serum_business/serum_business.dart';
+import 'package:serum_mobile/config/app_router.dart';
 import 'package:serum_mobile/config/app_theme.dart';
 import 'package:serum_mobile/src/cubits/app_session_cubit/app_session_cubit.dart';
 import 'package:serum_mobile/src/cubits/approvals_cubit/approvals_cubit.dart';
@@ -14,7 +16,7 @@ class ApprovalsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<ApprovalsCubit>(
       create: (ctx) => ApprovalsCubit(
-        ordersRepository: ctx.read<OrdersRepository>(),
+        ordersRepository: RepositoryProvider.of<OrdersRepository>(ctx),
         appSessionCubit: ctx.read<AppSessionCubit>(),
       )..loadBlockedOrders(),
       child: const _ApprovalsView(),
@@ -39,6 +41,17 @@ class _ApprovalsView extends StatelessWidget {
       child: Scaffold(
         backgroundColor: ColorPalette.surface,
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            tooltip: 'Regresar',
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(AppRouter.dashboard);
+              }
+            },
+          ),
           title: const Text('Bandeja de Aprobaciones'),
           actions: [
             IconButton(
@@ -85,72 +98,72 @@ class _ApprovalsView extends StatelessWidget {
         builder: (context, state) {
           final cubit = context.read<ApprovalsCubit>();
 
-          if (state.status == ApprovalsStatus.loading && state.blockedOrders.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state.blockedOrders.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: () => cubit.loadBlockedOrders(showLoading: false),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.7,
-                  child: const EmptyStateView(
-                    icon: Icons.check_circle_outline_rounded,
-                    iconColor: ColorPalette.success,
-                    title: 'Todo al Día',
-                    message:
-                        'No hay órdenes retenidas por descuento en este momento.\nCualquier modificación de precio en ventanilla aparecerá aquí en tiempo real.',
-                  ),
-                ),
-              ),
-            );
-          }
-
           return RefreshIndicator(
             onRefresh: () => cubit.loadBlockedOrders(showLoading: false),
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-              itemCount: state.blockedOrders.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Órdenes Pendientes (${state.blockedOrders.length})',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(
-                          'Requiere Aprobación',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: ColorPalette.warning,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+            child: state.status == ApprovalsStatus.loading && state.blockedOrders.isEmpty
+                ? const SingleChildScrollView(
+                    physics: AlwaysScrollableScrollPhysics(),
+                    child: SizedBox(
+                      height: 300,
+                      child: Center(child: CircularProgressIndicator()),
                     ),
-                  );
-                }
+                  )
+                : state.blockedOrders.isEmpty
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.7,
+                          child: const EmptyStateView(
+                            icon: Icons.check_circle_outline_rounded,
+                            iconColor: ColorPalette.success,
+                            title: 'Todo al Día',
+                            message:
+                                'No hay órdenes retenidas por descuento en este momento.\nCualquier modificación de precio en ventanilla aparecerá aquí en tiempo real.',
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                        itemCount: state.blockedOrders.length + 1,
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Órdenes Pendientes (${state.blockedOrders.length})',
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Requiere Aprobación',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: ColorPalette.warning,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
 
-                final order = state.blockedOrders[index - 1];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: ApprovalOrderCard(
-                    order: order,
-                    isApproving: state.approvingOrderId == order.id,
-                    isRejecting: state.rejectingOrderId == order.id,
-                    onApprove: (reason) => cubit.approveOrder(order.id, reason: reason),
-                    onReject: () => cubit.rejectOrder(order.id),
-                  ),
-                );
-              },
-            ),
+                          final order = state.blockedOrders[index - 1];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: ApprovalOrderCard(
+                              order: order,
+                              isApproving: state.approvingOrderId == order.id,
+                              isRejecting: state.rejectingOrderId == order.id,
+                              onApprove: (reason) => cubit.approveOrder(order.id, reason: reason),
+                              onReject: () => cubit.rejectOrder(order.id),
+                            ),
+                          );
+                        },
+                      ),
           );
         },
       ),

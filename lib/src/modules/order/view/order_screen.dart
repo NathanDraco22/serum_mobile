@@ -15,7 +15,7 @@ class OrderScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<OrderMobileCubit>(
       create: (ctx) => OrderMobileCubit(
-        ordersRepository: ctx.read<OrdersRepository>(),
+        ordersRepository: RepositoryProvider.of<OrdersRepository>(ctx),
       )..loadOrders(),
       child: const _OrderView(),
     );
@@ -122,39 +122,39 @@ class _OrderViewState extends State<_OrderView> {
           Expanded(
             child: BlocBuilder<OrderMobileCubit, OrderMobileState>(
               builder: (context, state) {
-                if (state.status == OrderMobileStatus.loading && state.orders.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state.filteredOrders.isEmpty) {
-                  return RefreshIndicator(
-                    onRefresh: () => cubit.loadOrders(showLoading: false),
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.55,
-                        child: EmptyStateView(
-                          icon: Icons.search_off_rounded,
-                          title: 'Sin coincidencias',
-                          message: state.searchQuery.isNotEmpty
-                              ? 'No encontramos órdenes para "${state.searchQuery}".'
-                              : 'No hay órdenes en la categoría seleccionada.',
-                        ),
-                      ),
-                    ),
-                  );
-                }
-
                 return RefreshIndicator(
                   onRefresh: () => cubit.loadOrders(showLoading: false),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    itemCount: state.filteredOrders.length,
-                    itemBuilder: (context, index) {
-                      final order = state.filteredOrders[index];
-                      return OrderCard(order: order);
-                    },
-                  ),
+                  child: state.status == OrderMobileStatus.loading && state.orders.isEmpty
+                      ? const SingleChildScrollView(
+                          physics: AlwaysScrollableScrollPhysics(),
+                          child: SizedBox(
+                            height: 300,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        )
+                      : state.filteredOrders.isEmpty
+                          ? SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: SizedBox(
+                                height: MediaQuery.of(context).size.height * 0.55,
+                                child: EmptyStateView(
+                                  icon: Icons.search_off_rounded,
+                                  title: 'Sin coincidencias',
+                                  message: state.searchQuery.isNotEmpty
+                                      ? 'No encontramos órdenes para "${state.searchQuery}".'
+                                      : 'No hay órdenes en la categoría seleccionada.',
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              itemCount: state.filteredOrders.length,
+                              itemBuilder: (context, index) {
+                                final order = state.filteredOrders[index];
+                                return OrderCard(order: order);
+                              },
+                            ),
                 );
               },
             ),

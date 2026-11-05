@@ -9,6 +9,7 @@ import '../src/modules/auth/view/login_screen.dart';
 import '../src/modules/inactive/view/inactive_screen.dart';
 import '../src/modules/shell/view/shell_screen.dart';
 import '../src/modules/dashboard/view/dashboard_screen.dart';
+import '../src/modules/administration/view/administration_screen.dart';
 import '../src/modules/approvals/view/approvals_screen.dart';
 import '../src/modules/order/view/order_screen.dart';
 import '../src/modules/cash_shift/view/cash_shift_screen.dart';
@@ -38,9 +39,10 @@ class AppRouter {
   static const String inactive = '/inactive';
   static const String login = '/login';
   static const String dashboard = '/dashboard';
-  static const String approvals = '/approvals';
   static const String orders = '/orders';
   static const String cashShifts = '/cash-shifts';
+  static const String admin = '/admin';
+  static const String approvals = '/approvals';
   static const String reports = '/reports';
   static const String users = '/users';
 
@@ -50,10 +52,9 @@ class AppRouter {
   }) {
     final rootNavigatorKey = GlobalKey<NavigatorState>();
     final dashboardNavKey = GlobalKey<NavigatorState>(debugLabel: 'dashboard');
-    final approvalsNavKey = GlobalKey<NavigatorState>(debugLabel: 'approvals');
     final ordersNavKey = GlobalKey<NavigatorState>(debugLabel: 'orders');
     final cashShiftsNavKey = GlobalKey<NavigatorState>(debugLabel: 'cashShifts');
-    final usersNavKey = GlobalKey<NavigatorState>(debugLabel: 'users');
+    final adminNavKey = GlobalKey<NavigatorState>(debugLabel: 'admin');
 
     return GoRouter(
       navigatorKey: rootNavigatorKey,
@@ -95,11 +96,12 @@ class AppRouter {
           return dashboard;
         }
 
-        // 6. Restricción para no-administradores: aprobaciones y usuarios son exclusivos de admins
+        // 6. Restricción para no-administradores: admin, approvals y users son exclusivos de admins
         if (!sessionState.isAdmin) {
           final isApprovals = currentLoc == approvals || currentLoc.startsWith('$approvals/');
           final isUsers = currentLoc == users || currentLoc.startsWith('$users/');
-          if (isApprovals || isUsers) {
+          final isAdminLoc = currentLoc == admin || currentLoc.startsWith('$admin/');
+          if (isApprovals || isUsers || isAdminLoc) {
             return dashboard;
           }
         }
@@ -127,6 +129,14 @@ class AppRouter {
           path: reports,
           builder: (context, state) => const ReportScreen(),
         ),
+        GoRoute(
+          path: approvals,
+          builder: (context, state) => const ApprovalsScreen(),
+        ),
+        GoRoute(
+          path: users,
+          builder: (context, state) => const UserScreen(),
+        ),
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) {
             return ShellScreen(navigationShell: navigationShell);
@@ -142,17 +152,7 @@ class AppRouter {
                 ),
               ],
             ),
-            // Branch 1: Approvals
-            StatefulShellBranch(
-              navigatorKey: approvalsNavKey,
-              routes: [
-                GoRoute(
-                  path: approvals,
-                  builder: (context, state) => const ApprovalsScreen(),
-                ),
-              ],
-            ),
-            // Branch 2: Orders
+            // Branch 1: Orders
             StatefulShellBranch(
               navigatorKey: ordersNavKey,
               routes: [
@@ -162,7 +162,7 @@ class AppRouter {
                 ),
               ],
             ),
-            // Branch 3: Cash Shifts
+            // Branch 2: Cash Shifts
             StatefulShellBranch(
               navigatorKey: cashShiftsNavKey,
               routes: [
@@ -172,13 +172,13 @@ class AppRouter {
                 ),
               ],
             ),
-            // Branch 4: Users
+            // Branch 3: Administration (Solo Admins)
             StatefulShellBranch(
-              navigatorKey: usersNavKey,
+              navigatorKey: adminNavKey,
               routes: [
                 GoRoute(
-                  path: users,
-                  builder: (context, state) => const UserScreen(),
+                  path: admin,
+                  builder: (context, state) => const AdministrationScreen(),
                 ),
               ],
             ),

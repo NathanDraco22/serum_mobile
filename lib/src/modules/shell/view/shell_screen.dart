@@ -35,15 +35,6 @@ class ShellScreen extends StatelessWidget {
     ),
     _ShellDestination(
       branchIndex: 1,
-      adminOnly: true,
-      destination: NavigationDestination(
-        icon: Icon(Icons.verified_user_outlined),
-        selectedIcon: Icon(Icons.verified_user_rounded),
-        label: 'Aprobaciones',
-      ),
-    ),
-    _ShellDestination(
-      branchIndex: 2,
       destination: NavigationDestination(
         icon: Icon(Icons.medical_services_outlined),
         selectedIcon: Icon(Icons.medical_services_rounded),
@@ -51,7 +42,7 @@ class ShellScreen extends StatelessWidget {
       ),
     ),
     _ShellDestination(
-      branchIndex: 3,
+      branchIndex: 2,
       destination: NavigationDestination(
         icon: Icon(Icons.point_of_sale_outlined),
         selectedIcon: Icon(Icons.point_of_sale_rounded),
@@ -59,12 +50,12 @@ class ShellScreen extends StatelessWidget {
       ),
     ),
     _ShellDestination(
-      branchIndex: 4,
+      branchIndex: 3,
       adminOnly: true,
       destination: NavigationDestination(
-        icon: Icon(Icons.manage_accounts_outlined),
-        selectedIcon: Icon(Icons.manage_accounts_rounded),
-        label: 'Usuarios',
+        icon: Icon(Icons.admin_panel_settings_outlined),
+        selectedIcon: Icon(Icons.admin_panel_settings_rounded),
+        label: 'Administración',
       ),
     ),
   ];

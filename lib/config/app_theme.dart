@@ -59,7 +59,7 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData get lightTheme {
-    final colorScheme = ColorScheme(
+    const colorScheme = ColorScheme(
       brightness: Brightness.light,
       primary: ColorPalette.primary,
       onPrimary: ColorPalette.onPrimary,

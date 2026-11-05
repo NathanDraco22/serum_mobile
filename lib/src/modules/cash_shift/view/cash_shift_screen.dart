@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
 import 'package:serum_mobile/src/cubits/app_session_cubit/app_session_cubit.dart';
 import 'package:serum_mobile/src/cubits/cash_shift_cubit/cash_shift_mobile_cubit.dart';
 import 'package:serum_mobile/src/modules/cash_shift/widgets/shift_breakdown_card.dart';
+import 'package:serum_mobile/src/tools/formatters/currency_formatter.dart';
 import 'package:serum_mobile/src/widgets/common/app_search_bar.dart';
 import 'package:serum_mobile/src/widgets/common/empty_state_view.dart';
 
@@ -16,7 +16,7 @@ class CashShiftScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<CashShiftMobileCubit>(
       create: (ctx) => CashShiftMobileCubit(
-        cashShiftsRepository: ctx.read<CashShiftsRepository>(),
+        cashShiftsRepository: RepositoryProvider.of<CashShiftsRepository>(ctx),
       )..loadShifts(),
       child: const _CashShiftView(),
     );
@@ -44,14 +44,6 @@ class _CashShiftViewState extends State<_CashShiftView> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  String _formatCents(int cents) {
-    final amount = cents / 100.0;
-    return NumberFormat.currency(
-      symbol: '\$',
-      decimalDigits: 2,
-    ).format(amount);
   }
 
   @override
@@ -103,7 +95,7 @@ class _CashShiftViewState extends State<_CashShiftView> {
                     Expanded(
                       child: _buildSummaryMetric(
                         label: 'Recaudado',
-                        value: _formatCents(state.totalRevenueCents),
+                        value: formatCentsToCurrency(state.totalRevenueCents),
                         icon: Icons.payments_rounded,
                         color: ColorPalette.primary,
                       ),
@@ -179,39 +171,39 @@ class _CashShiftViewState extends State<_CashShiftView> {
           Expanded(
             child: BlocBuilder<CashShiftMobileCubit, CashShiftMobileState>(
               builder: (context, state) {
-                if (state.status == CashShiftMobileStatus.loading && state.shifts.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state.filteredShifts.isEmpty) {
-                  return RefreshIndicator(
-                    onRefresh: () => cubit.loadShifts(showLoading: false),
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.45,
-                        child: EmptyStateView(
-                          icon: Icons.point_of_sale_outlined,
-                          title: 'Sin turnos registrados',
-                          message: state.searchQuery.isNotEmpty
-                              ? 'No encontramos turnos para "${state.searchQuery}".'
-                              : 'No hay turnos bajo el filtro seleccionado.',
-                        ),
-                      ),
-                    ),
-                  );
-                }
-
                 return RefreshIndicator(
                   onRefresh: () => cubit.loadShifts(showLoading: false),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    itemCount: state.filteredShifts.length,
-                    itemBuilder: (context, index) {
-                      final shift = state.filteredShifts[index];
-                      return ShiftBreakdownCard(shift: shift);
-                    },
-                  ),
+                  child: state.status == CashShiftMobileStatus.loading && state.shifts.isEmpty
+                      ? const SingleChildScrollView(
+                          physics: AlwaysScrollableScrollPhysics(),
+                          child: SizedBox(
+                            height: 300,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        )
+                      : state.filteredShifts.isEmpty
+                          ? SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: SizedBox(
+                                height: MediaQuery.of(context).size.height * 0.45,
+                                child: EmptyStateView(
+                                  icon: Icons.point_of_sale_outlined,
+                                  title: 'Sin turnos registrados',
+                                  message: state.searchQuery.isNotEmpty
+                                      ? 'No encontramos turnos para "${state.searchQuery}".'
+                                      : 'No hay turnos bajo el filtro seleccionado.',
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              itemCount: state.filteredShifts.length,
+                              itemBuilder: (context, index) {
+                                final shift = state.filteredShifts[index];
+                                return ShiftBreakdownCard(shift: shift);
+                              },
+                            ),
                 );
               },
             ),

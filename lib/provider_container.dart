@@ -71,10 +71,10 @@ class GlobalCubitProvider extends StatelessWidget {
       providers: [
         BlocProvider<AppSessionCubit>(
           create: (ctx) => AppSessionCubit(
-            authRepository: ctx.read<AuthRepository>(),
-            branchesRepository: ctx.read<BranchesRepository>(),
-            usersRepository: ctx.read<UsersRepository>(),
-            servinRepository: ctx.read<ServinRepository>(),
+            authRepository: RepositoryProvider.of<AuthRepository>(ctx),
+            branchesRepository: RepositoryProvider.of<BranchesRepository>(ctx),
+            usersRepository: RepositoryProvider.of<UsersRepository>(ctx),
+            servinRepository: RepositoryProvider.of<ServinRepository>(ctx),
           )..initSession(),
         ),
       ],

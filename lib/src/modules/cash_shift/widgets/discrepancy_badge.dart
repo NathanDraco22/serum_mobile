@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:serum_mobile/config/app_theme.dart';
+import 'package:serum_mobile/src/tools/formatters/currency_formatter.dart';
 
 class DiscrepancyBadge extends StatelessWidget {
   const DiscrepancyBadge({
@@ -11,14 +11,6 @@ class DiscrepancyBadge extends StatelessWidget {
 
   final int? difference;
   final bool isOpen;
-
-  String _formatCents(int cents) {
-    final absAmount = (cents.abs()) / 100.0;
-    return NumberFormat.currency(
-      symbol: '\$',
-      decimalDigits: 2,
-    ).format(absAmount);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +80,7 @@ class DiscrepancyBadge extends StatelessWidget {
             const Icon(Icons.warning_amber_rounded, size: 13, color: ColorPalette.error),
             const SizedBox(width: 4),
             Text(
-              'Faltante: -${_formatCents(diff)}',
+              'Faltante: -${formatCentsToCurrency(diff.abs())}',
               style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -112,7 +104,7 @@ class DiscrepancyBadge extends StatelessWidget {
             const Icon(Icons.info_outline_rounded, size: 13, color: ColorPalette.warning),
             const SizedBox(width: 4),
             Text(
-              'Sobrante: +${_formatCents(diff)}',
+              'Sobrante: +${formatCentsToCurrency(diff.abs())}',
               style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,

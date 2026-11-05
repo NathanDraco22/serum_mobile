@@ -37,7 +37,7 @@ class KpiGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 1.25,
+      childAspectRatio: 1.0,
       children: [
         KpiCard(
           title: 'Ventas Totales',

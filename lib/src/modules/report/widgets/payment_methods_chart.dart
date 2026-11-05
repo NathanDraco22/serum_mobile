@@ -1,8 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
+import 'package:serum_mobile/src/tools/formatters/currency_formatter.dart';
 
 class PaymentMethodsChart extends StatefulWidget {
   final PaymentMethodsBreakdown breakdown;
@@ -18,14 +18,6 @@ class PaymentMethodsChart extends StatefulWidget {
 
 class _PaymentMethodsChartState extends State<PaymentMethodsChart> {
   int _touchedIndex = -1;
-
-  String _formatCents(int cents) {
-    final amount = cents / 100.0;
-    return NumberFormat.currency(
-      symbol: '\$',
-      decimalDigits: 2,
-    ).format(amount);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +120,7 @@ class _PaymentMethodsChartState extends State<PaymentMethodsChart> {
                     children: [
                       _MethodLegendItem(
                         label: 'Efectivo',
-                        amount: _formatCents(cash),
+                        amount: formatCentsToCurrency(cash),
                         percentage: (cash / total) * 100,
                         color: ColorPalette.primary,
                         isHighlighted: _touchedIndex == 0,
@@ -136,7 +128,7 @@ class _PaymentMethodsChartState extends State<PaymentMethodsChart> {
                       const SizedBox(height: 10),
                       _MethodLegendItem(
                         label: 'Tarjetas',
-                        amount: _formatCents(card),
+                        amount: formatCentsToCurrency(card),
                         percentage: (card / total) * 100,
                         color: ColorPalette.secondary,
                         isHighlighted: _touchedIndex == 1,
@@ -144,7 +136,7 @@ class _PaymentMethodsChartState extends State<PaymentMethodsChart> {
                       const SizedBox(height: 10),
                       _MethodLegendItem(
                         label: 'Transferencias',
-                        amount: _formatCents(transfer),
+                        amount: formatCentsToCurrency(transfer),
                         percentage: (transfer / total) * 100,
                         color: ColorPalette.tertiary,
                         isHighlighted: _touchedIndex == 2,

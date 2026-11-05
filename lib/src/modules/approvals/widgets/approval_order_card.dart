@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:serum_business/serum_business.dart';
 import 'package:serum_mobile/config/app_theme.dart';
 import 'package:serum_mobile/src/modules/approvals/widgets/price_discrepancy_table.dart';
+import 'package:serum_mobile/src/tools/formatters/date_formatter.dart';
+import 'package:serum_mobile/src/tools/formatters/folio_formatter.dart';
 import 'package:serum_mobile/src/widgets/dialogs/confirm_action_dialog.dart';
 import 'package:serum_mobile/src/widgets/dialogs/reason_prompt_dialog.dart';
 
@@ -22,12 +23,6 @@ class ApprovalOrderCard extends StatelessWidget {
   final void Function(String? reason) onApprove;
   final VoidCallback onReject;
 
-  String _formatDate(int timestamp) {
-    if (timestamp <= 0) return 'Fecha no disponible';
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    return DateFormat('dd/MM/yyyy • hh:mm a').format(date);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -35,9 +30,7 @@ class ApprovalOrderCard extends StatelessWidget {
         ? order.patientInfo!.name
         : 'Paciente sin registrar';
 
-    final folio = order.id.length >= 8
-        ? 'FOL-${order.id.substring(0, 8).toUpperCase()}'
-        : 'FOL-${order.id.toUpperCase()}';
+    final folio = formatOrderFolio(order.id);
 
     final isBusy = isApproving || isRejecting;
 
@@ -127,7 +120,7 @@ class ApprovalOrderCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  _formatDate(order.createdAt),
+                  formatTimestampToDateTime(order.createdAt),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: ColorPalette.outline,
                     fontSize: 12,
